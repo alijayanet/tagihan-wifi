@@ -174,16 +174,39 @@ npm install
 
 ### 3. Konfigurasi Environment (`.env`)
 
-File `.env` otomatis membaca konfigurasi default, namun Anda dapat menyesuaikannya:
+Untuk membuat file `.env` dari template `env-example.txt`, Anda dapat menggunakan salah satu cara instan di bawah ini (tinggal salin dan tempel di terminal):
+
+#### Cara 1: Menggunakan Perintah Copy (Paling Cepat)
+* **Di Linux / Armbian / macOS**:
+  ```bash
+  cp env-example.txt .env
+  ```
+* **Di Windows PowerShell**:
+  ```powershell
+  Copy-Item env-example.txt .env
+  ```
+* **Di Windows CMD**:
+  ```cmd
+  copy env-example.txt .env
+  ```
+
+#### Cara 2: 1-Klik Buat File `.env` Otomatis (Linux / Armbian)
+Tinggal salin seluruh blok perintah berikut dan tempel (*paste*) langsung ke terminal Armbian Anda:
 ```bash
-# Salin template .env jika diperlukan
-nano .env
+cat << 'EOF' > .env
+PORT=3000
+SESSION_SECRET=tagihan_wifi_armbian_rahasia_super_aman_2026
+DB_PATH=./database/tagihan_wifi.sqlite
+EOF
 ```
-Isi dasar file `.env`:
+
+#### Isi Referensi File `.env`:
 ```env
 PORT=3000
-SESSION_SECRET=wifi-billing-secret-key-armbian-2026
+SESSION_SECRET=tagihan_wifi_armbian_rahasia_super_aman_2026
+DB_PATH=./database/tagihan_wifi.sqlite
 ```
+*(Catatan: Anda dapat mengubah `PORT=3000` ke port lain seperti `8080` jika port 3000 sudah digunakan oleh aplikasi lain).*
 
 ---
 
