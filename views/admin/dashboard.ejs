@@ -1,0 +1,429 @@
+<%- include('../partials/head') %>
+
+<div class="min-h-screen flex">
+  <!-- Sidebar -->
+  <%- include('../partials/sidebar') %>
+
+  <!-- Main Content Wrapper -->
+  <div class="flex-1 md:pl-64 flex flex-col min-w-0">
+    <%- include('../partials/navbar') %>
+
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 bg-slate-50/60">
+      <div class="max-w-7xl mx-auto space-y-6">
+
+        <%- include('../partials/alerts') %>
+
+        <!-- Filter Periode & Action Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+          <div>
+            <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-chart-pie text-brand-600"></i>
+              <span>Ikhtisar Tagihan Periode <%= monthName %> <%= currentYear %></span>
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">Pantau realisasi pembayaran dan performa penagihan secara real-time</p>
+          </div>
+
+          <!-- Periode Selector & Generate Trigger -->
+          <div class="flex flex-wrap items-center gap-2.5">
+            <form action="/admin/dashboard" method="GET" class="flex items-center gap-2">
+              <select name="month" onchange="this.form.submit()" class="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                <% for(let m=1; m<=12; m++) { %>
+                  <option value="<%= m %>" <%= currentMonth === m ? 'selected' : '' %>>
+                    <%= m.toString().padStart(2, '0') %> - <%= ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][m-1] %>
+                  </option>
+                <% } %>
+              </select>
+
+              <select name="year" onchange="this.form.submit()" class="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                <% for(let y = currentYear - 1; y <= currentYear + 1; y++) { %>
+                  <option value="<%= y %>" <%= currentYear === y ? 'selected' : '' %>><%= y %></option>
+                <% } %>
+              </select>
+            </form>
+
+            <!-- 1-Click Generate Bill Button -->
+            <form action="/admin/tagihan/generate" method="POST" onsubmit="return confirm('Buat tagihan otomatis untuk seluruh pelanggan aktif pada periode <%= monthName %> <%= currentYear %>?')">
+              <input type="hidden" name="month" value="<%= currentMonth %>">
+              <input type="hidden" name="year" value="<%= currentYear %>">
+              <button type="submit" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Generate Tagihan</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          
+          <!-- Card 1: Sudah Lunas -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-emerald-300 transition-all">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                <i class="fa-solid fa-circle-check mr-1"></i> Sudah Lunas
+              </span>
+              <div class="w-10 h-10 rounded-xl bg-emerald-100/70 text-emerald-600 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-sack-dollar"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-extrabold text-slate-900 tracking-tight">
+              <%= formatRupiah(billStats.lunas_amount) %>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-500 mt-2">
+              <span><%= billStats.lunas_count %> dari <%= billStats.total_bills %> Tagihan</span>
+              <span class="font-bold text-emerald-600"><%= percentLunas %>%</span>
+            </div>
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-100 rounded-full h-2 mt-2 overflow-hidden">
+              <div class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: <%= percentLunas %>%"></div>
+            </div>
+          </div>
+
+          <!-- Card 2: Belum Lunas (Tertunda) -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-rose-300 transition-all">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg">
+                <i class="fa-solid fa-clock mr-1"></i> Belum Lunas
+              </span>
+              <div class="w-10 h-10 rounded-xl bg-rose-100/70 text-rose-600 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-extrabold text-slate-900 tracking-tight">
+              <%= formatRupiah(billStats.belum_amount) %>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-500 mt-2">
+              <span><%= billStats.belum_count %> Tagihan Tertunda</span>
+              <a href="/admin/tagihan?status=belum&month=<%= currentMonth %>&year=<%= currentYear %>" class="text-rose-600 hover:underline font-semibold">
+                Lihat Semua &rarr;
+              </a>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2 mt-2 overflow-hidden">
+              <div class="bg-rose-500 h-2 rounded-full transition-all duration-500" style="width: <%= 100 - percentLunas %>%"></div>
+            </div>
+          </div>
+
+          <!-- Card 3: Total Target Omzet -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-brand-300 transition-all">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-brand-600 bg-brand-50 px-2.5 py-1 rounded-lg">
+                <i class="fa-solid fa-bullseye mr-1"></i> Total Target
+              </span>
+              <div class="w-10 h-10 rounded-xl bg-brand-100/70 text-brand-600 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-file-invoice"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-extrabold text-slate-900 tracking-tight">
+              <%= formatRupiah(billStats.total_amount) %>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-500 mt-2">
+              <span>Periode <%= monthName %></span>
+              <span class="font-semibold text-slate-700"><%= billStats.total_bills %> Tagihan</span>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-2 pt-2 border-t border-slate-100 flex items-center gap-1">
+              <i class="fa-solid fa-info-circle"></i> Berdasarkan pelanggan aktif
+            </div>
+          </div>
+
+          <!-- Card 4: Total Pelanggan -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-indigo-300 transition-all">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">
+                <i class="fa-solid fa-users mr-1"></i> Pelanggan
+              </span>
+              <div class="w-10 h-10 rounded-xl bg-indigo-100/70 text-indigo-600 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-network-wired"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-extrabold text-slate-900 tracking-tight">
+              <%= customerStats.total %> <span class="text-xs font-semibold text-slate-500">Akun</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-slate-500 mt-2">
+              <span class="text-emerald-600 font-semibold"><%= customerStats.aktif %> Aktif</span> &bull; 
+              <span class="text-amber-600 font-semibold"><%= customerStats.isolir %> Isolir</span>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-2 pt-2 border-t border-slate-100">
+              <a href="/admin/pelanggan" class="text-brand-600 hover:underline font-semibold">Kelola Pelanggan &rarr;</a>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 2 Column Layout: Performa Kolektor & Trend Grafik -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Kolom 1 & 2: Riwayat Trend 6 Bulan & Tagihan Terkini -->
+          <div class="lg:col-span-2 space-y-6">
+
+            <!-- Trend Bar Chart (HTML/CSS Based) -->
+            <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+              <div class="flex items-center justify-between mb-5">
+                <div>
+                  <h4 class="text-sm font-bold text-slate-800">Trend Realisasi Pembayaran (6 Bulan Terakhir)</h4>
+                  <p class="text-xs text-slate-400">Perbandingan target tagihan vs pembayaran lunas</p>
+                </div>
+                <div class="flex items-center gap-3 text-xs">
+                  <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500"></span> Lunas</span>
+                  <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-slate-200"></span> Target</span>
+                </div>
+              </div>
+
+              <!-- Bar visualizer -->
+              <div class="grid grid-cols-6 gap-2 sm:gap-4 items-end h-40 pt-4 border-b border-slate-200">
+                <% 
+                  const maxTarget = Math.max(...monthlyTrends.map(t => t.target), 1000000);
+                  monthlyTrends.forEach(trend => {
+                    const lunasHeight = Math.round((trend.lunas / maxTarget) * 100);
+                    const targetHeight = Math.round((trend.target / maxTarget) * 100);
+                %>
+                  <div class="flex flex-col items-center h-full justify-end group">
+                    <div class="text-[10px] font-bold text-slate-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      <%= formatRupiah(trend.lunas) %>
+                    </div>
+                    <div class="w-full max-w-[36px] bg-slate-100 rounded-t-lg relative flex items-end justify-center overflow-hidden" style="height: <%= Math.max(targetHeight, 8) %>%">
+                      <div class="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t-lg transition-all duration-300" style="height: <%= (trend.target > 0 ? (trend.lunas / trend.target) * 100 : 0) %>%"></div>
+                    </div>
+                    <span class="text-[11px] font-semibold text-slate-500 mt-2"><%= trend.label %></span>
+                  </div>
+                <% }) %>
+              </div>
+            </div>
+
+            <!-- Table 10 Tagihan Terkini dengan Status LUNAS / BELUM -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+              <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h4 class="text-sm font-bold text-slate-800">Tagihan Terkini Periode <%= monthName %> <%= currentYear %></h4>
+                  <p class="text-xs text-slate-400">Status pembayaran lunas dan belum pelanggan</p>
+                </div>
+                <a href="/admin/tagihan" class="text-xs font-semibold text-brand-600 hover:text-brand-800">
+                  Lihat Semua Tagihan &rarr;
+                </a>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/70">
+                      <th class="py-3 px-4">Invoice / Pelanggan</th>
+                      <th class="py-3 px-4">Paket</th>
+                      <th class="py-3 px-4">Jumlah</th>
+                      <th class="py-3 px-4 text-center">Status</th>
+                      <th class="py-3 px-4 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 text-xs">
+                    <% if (recentBills.length === 0) { %>
+                      <tr>
+                        <td colspan="5" class="py-8 text-center text-slate-400">
+                          <i class="fa-regular fa-folder-open text-2xl mb-2 block"></i>
+                          Belum ada data tagihan di periode ini. Klik "Generate Tagihan" di atas.
+                        </td>
+                      </tr>
+                    <% } %>
+
+                    <% recentBills.forEach(b => { %>
+                      <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="py-3.5 px-4">
+                          <div class="font-bold text-slate-800"><%= b.customer_name %></div>
+                          <div class="text-[11px] text-slate-400 font-mono"><%= b.invoice_no %> &bull; <%= b.customer_code %></div>
+                        </td>
+                        <td class="py-3.5 px-4">
+                          <span class="inline-block px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium text-[11px]">
+                            <%= b.package_name %>
+                          </span>
+                        </td>
+                        <td class="py-3.5 px-4 font-bold text-slate-800">
+                          <%= formatRupiah(b.amount) %>
+                        </td>
+                        <td class="py-3.5 px-4 text-center">
+                          <% if (b.status === 'lunas') { %>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <i class="fa-solid fa-check"></i> LUNAS
+                            </span>
+                          <% } else { %>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                              <i class="fa-solid fa-xmark"></i> BELUM
+                            </span>
+                          <% } %>
+                        </td>
+                        <td class="py-3.5 px-4 text-right">
+                          <div class="inline-flex items-center gap-1.5">
+                            <% if (b.status === 'lunas') { %>
+                              <a href="/admin/tagihan/<%= b.id %>/struk" target="_blank" title="Cetak Struk" 
+                                 class="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+                                <i class="fa-solid fa-print"></i>
+                              </a>
+                            <% } else { %>
+                              <!-- Quick Pay Button -->
+                              <button type="button" onclick="openQuickPayModal('<%= b.id %>', '<%= b.customer_name %>', '<%= b.amount %>')" 
+                                      class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-sm transition">
+                                Bayar
+                              </button>
+                            <% } %>
+                          </div>
+                        </td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Kolom 3: Performa Kolektor & Ringkasan Setoran -->
+          <div class="space-y-6">
+            
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <i class="fa-solid fa-motorcycle text-amber-500"></i>
+                  <span>Performa Kolektor Lapangan</span>
+                </h4>
+                <a href="/admin/kolektor" class="text-xs font-semibold text-brand-600 hover:underline">Detail &rarr;</a>
+              </div>
+              <p class="text-xs text-slate-400 mb-4">Setoran dan penagihan per petugas bulan ini</p>
+
+              <div class="space-y-3.5">
+                <% if (collectorStats.length === 0) { %>
+                  <p class="text-xs text-slate-400 text-center py-4">Belum ada kolektor terdaftar.</p>
+                <% } %>
+
+                <% collectorStats.forEach(col => { 
+                  const colPercent = col.total_bills > 0 ? Math.round((col.lunas_count / col.total_bills) * 100) : 0;
+                %>
+                  <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition">
+                    <div class="flex items-center justify-between mb-1.5">
+                      <div class="font-bold text-xs text-slate-800"><%= col.name %></div>
+                      <span class="text-[11px] font-bold text-emerald-600"><%= colPercent %>%</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 mb-2 flex items-center justify-between">
+                      <span><%= col.area || 'Semua Wilayah' %></span>
+                      <span class="font-semibold text-slate-700"><%= formatRupiah(col.lunas_amount) %></span>
+                    </div>
+                    <!-- Mini progress bar -->
+                    <div class="w-full bg-slate-200/70 rounded-full h-1.5 overflow-hidden">
+                      <div class="bg-amber-500 h-1.5 rounded-full" style="width: <%= colPercent %>%"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1.5">
+                      <span>Tertagih: <%= col.lunas_count %> / <%= col.total_bills %></span>
+                      <span class="text-rose-500 font-medium">Sisa: <%= col.belum_count %></span>
+                    </div>
+                  </div>
+                <% }) %>
+              </div>
+            </div>
+
+            <!-- Server & Environment Card -->
+            <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-5 rounded-2xl shadow-lg border border-slate-700">
+              <div class="flex items-center gap-3 mb-3">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
+                  <i class="fa-solid fa-server"></i>
+                </div>
+                <div>
+                  <h5 class="text-xs font-bold text-white">Status Server Armbian</h5>
+                  <p class="text-[10px] text-slate-400">Optimal & Hemat Resource</p>
+                </div>
+              </div>
+              
+              <div class="space-y-2 text-xs text-slate-300">
+                <div class="flex justify-between py-1 border-b border-slate-700/60">
+                  <span class="text-slate-400">Database Engine:</span>
+                  <span class="font-mono font-semibold text-emerald-400">SQLite 3</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-700/60">
+                  <span class="text-slate-400">Journal Mode:</span>
+                  <span class="font-mono font-semibold text-emerald-400">WAL (Write-Ahead)</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-700/60">
+                  <span class="text-slate-400">Koneksi MikroTik:</span>
+                  <span class="font-semibold text-slate-300">Tanpa MikroTik (Mandiri)</span>
+                </div>
+                <div class="flex justify-between py-1">
+                  <span class="text-slate-400">Runtime:</span>
+                  <span class="font-mono text-slate-300">Node.js Express</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal Quick Pay -->
+<div id="quickPayModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <h4 class="text-sm font-bold text-slate-800">Proses Pembayaran</h4>
+      <button onclick="closeQuickPayModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <form id="quickPayForm" method="POST">
+      <div class="space-y-3">
+        <div>
+          <p class="text-xs text-slate-500">Nama Pelanggan:</p>
+          <p id="qpCustomerName" class="text-sm font-bold text-slate-800">-</p>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500">Total Tagihan:</p>
+          <p id="qpAmount" class="text-base font-extrabold text-emerald-600">-</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Metode Pembayaran</label>
+          <select name="payment_method" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <option value="tunai">Tunai / Cash</option>
+            <option value="transfer">Transfer Bank</option>
+            <option value="qris">QRIS / E-Wallet</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Petugas / Penerima</label>
+          <select name="collected_by" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <option value="">Admin Langsung (Kas Pusat)</option>
+            <% collectorStats.forEach(c => { %>
+              <option value="<%= c.id %>"><%= c.name %> (<%= c.area || 'Kolektor' %>)</option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-6 flex items-center justify-end gap-2">
+        <button type="button" onclick="closeQuickPayModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">
+          Batal
+        </button>
+        <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition">
+          Konfirmasi Lunas
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openQuickPayModal(billId, customerName, amount) {
+    const modal = document.getElementById('quickPayModal');
+    const form = document.getElementById('quickPayForm');
+    form.action = `/admin/tagihan/${billId}/bayar`;
+    document.getElementById('qpCustomerName').innerText = customerName;
+    document.getElementById('qpAmount').innerText = 'Rp ' + Number(amount).toLocaleString('id-ID');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  function closeQuickPayModal() {
+    const modal = document.getElementById('quickPayModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+</script>
+
+<%- include('../partials/footer') %>

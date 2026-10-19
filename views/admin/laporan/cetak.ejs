@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 15mm 12mm 15mm 12mm;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      color: #1e293b;
+      background: #f8fafc;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .no-print {
+      max-width: 800px;
+      margin: 0 auto 20px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+
+    .btn {
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      text-decoration: none;
+      color: #334155;
+    }
+    .btn-primary {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb;
+    }
+
+    .report-sheet {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      box-sizing: border-box;
+      border: 1px solid #e2e8f0;
+    }
+
+    /* Kop Surat */
+    .header-kop {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .company-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+      text-transform: uppercase;
+    }
+    .company-tagline {
+      font-size: 11px;
+      color: #475569;
+      margin-top: 2px;
+    }
+    .company-address {
+      font-size: 10px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .divider-double {
+      border-top: 2px solid #0f172a;
+      border-bottom: 1px solid #0f172a;
+      height: 2px;
+      margin: 12px 0 16px 0;
+    }
+
+    .report-title {
+      text-align: center;
+      font-size: 14px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      color: #0f172a;
+    }
+    .report-subtitle {
+      text-align: center;
+      font-size: 11px;
+      color: #475569;
+      margin-bottom: 16px;
+    }
+
+    /* Meta Info Grid */
+    .meta-box {
+      display: flex;
+      justify-content: space-between;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      font-size: 10.5px;
+    }
+    .meta-col {
+      line-height: 1.6;
+    }
+
+    /* Data Table */
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+      margin-bottom: 20px;
+    }
+    table.data-table th, table.data-table td {
+      border: 1px solid #cbd5e1;
+      padding: 6px 8px;
+    }
+    table.data-table th {
+      background: #f1f5f9;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #334155;
+      font-size: 9.5px;
+      letter-spacing: 0.5px;
+    }
+    table.data-table tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .font-mono { font-family: 'Courier New', Courier, monospace; }
+    .font-bold { font-weight: bold; }
+
+    /* Total Row */
+    .total-row {
+      background: #f1f5f9 !important;
+      font-weight: bold;
+      font-size: 11px;
+    }
+
+    /* Tanda Tangan */
+    .signature-container {
+      margin-top: 35px;
+      display: flex;
+      justify-content: space-between;
+      page-break-inside: avoid;
+    }
+    .sig-box {
+      width: 200px;
+      text-align: center;
+      font-size: 11px;
+    }
+    .sig-space {
+      height: 60px;
+    }
+    .sig-name {
+      font-weight: bold;
+      text-decoration: underline;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        padding: 0;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .report-sheet {
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Screen Action Bar -->
+  <div class="no-print">
+    <div>
+      <span style="font-weight: bold; color: #1e293b;">Pratinjau Cetak Laporan Kolektor</span>
+      <span style="font-size: 11px; color: #64748b; margin-left: 10px;"><%= transactions.length %> Transaksi Ditemukan</span>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button onclick="window.print()" class="btn btn-primary">🖨️ Cetak Dokumen (A4)</button>
+      <button onclick="window.close()" class="btn">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Lembar Cetak Laporan Resmi -->
+  <div class="report-sheet">
+    
+    <!-- Kop Usaha -->
+    <div class="header-kop">
+      <div class="company-name"><%= settings.company_name || 'LAYANAN INTERNET WIFI' %></div>
+      <div class="company-tagline"><%= settings.company_tagline || 'Penyedia Layanan Koneksi Cepat & Stabil' %></div>
+      <div class="company-address">
+        <%= settings.company_address || 'Wilayah RT/RW Net Nusantara' %> 
+        <% if (settings.company_phone) { %> &bull; Kontak/WA: <%= settings.company_phone %> <% } %>
+      </div>
+    </div>
+
+    <div class="divider-double"></div>
+
+    <div class="report-title">LAPORAN TRANSAKSI & SETORAN KOLEKTOR</div>
+    <div class="report-subtitle">
+      Periode Transaksi: <b><%= formatDate(startDate) %></b> s/d <b><%= formatDate(endDate) %></b>
+    </div>
+
+    <!-- Informasi Filter -->
+    <div class="meta-box">
+      <div class="meta-col">
+        <div>Petugas Kolektor: <b><%= targetCollectorName %></b></div>
+        <div>Metode Bayar: <b><%= paymentMethod ? paymentMethod.toUpperCase() : 'Semua Metode (Tunai, Transfer, QRIS)' %></b></div>
+      </div>
+      <div class="meta-col text-right">
+        <div>Dicetak Pada: <b><%= formatDateTime(new Date()) %></b></div>
+        <div>Total Transaksi: <b><%= transactions.length %> Pembayaran Berhasil</b></div>
+      </div>
+    </div>
+
+    <!-- Tabel Data Transaksi -->
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th class="text-center" style="width: 25px;">No</th>
+          <th>Tgl & Jam</th>
+          <th>No. Invoice</th>
+          <th>Pelanggan</th>
+          <th>Paket</th>
+          <th>Petugas Kolektor</th>
+          <th class="text-center">Metode</th>
+          <th class="text-right">Nominal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (transactions.length === 0) { %>
+          <tr>
+            <td colspan="8" class="text-center" style="padding: 20px; color: #94a3b8;">
+              Tidak ada data pembayaran yang tercatat pada rentang tanggal ini.
+            </td>
+          </tr>
+        <% } %>
+
+        <% transactions.forEach((t, index) => { %>
+          <tr>
+            <td class="text-center"><%= index + 1 %></td>
+            <td><%= formatDateTime(t.paid_at) %></td>
+            <td class="font-mono font-bold"><%= t.invoice_no %></td>
+            <td>
+              <b><%= t.customer_name %></b>
+              <div style="font-size: 8.5px; color: #64748b;"><%= t.customer_code %> &bull; <%= t.customer_address || '-' %></div>
+            </td>
+            <td><%= t.package_name %> (<%= t.package_speed %>)</td>
+            <td><%= t.collector_name || 'Admin Kas' %></td>
+            <td class="text-center font-bold" style="text-transform: uppercase;">
+              <%= t.payment_method || 'TUNAI' %>
+            </td>
+            <td class="text-right font-bold"><%= formatRupiah(t.amount) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+
+      <% if (transactions.length > 0) { %>
+        <tfoot>
+          <tr class="total-row">
+            <td colspan="7" class="text-right" style="padding: 8px;">TOTAL SETORAN TERKUMPUL:</td>
+            <td class="text-right" style="padding: 8px; font-size: 12px; color: #047857;"><%= formatRupiah(totalAmount) %></td>
+          </tr>
+        </tfoot>
+      <% } %>
+    </table>
+
+    <!-- Tanda Tangan -->
+    <div class="signature-container">
+      <div class="sig-box">
+        <div>Dibuat Oleh:</div>
+        <div style="color: #64748b; font-size: 10px;">Petugas Kolektor / Kasir</div>
+        <div class="sig-space"></div>
+        <div class="sig-name">( <%= targetCollectorName === 'Semua Petugas Kolektor' ? 'Petugas Terkait' : targetCollectorName %> )</div>
+      </div>
+
+      <div class="sig-box">
+        <div>Mengetahui & Menyetujui:</div>
+        <div style="color: #64748b; font-size: 10px;">Admin / Penanggung Jawab</div>
+        <div class="sig-space"></div>
+        <div class="sig-name">( Administrator Usaha )</div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,183 @@
+<%- include('../../partials/head') %>
+
+<div class="min-h-screen flex">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="flex-1 md:pl-64 flex flex-col min-w-0">
+    <%- include('../../partials/navbar') %>
+
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 bg-slate-50/60">
+      <div class="max-w-7xl mx-auto space-y-6">
+
+        <%- include('../../partials/alerts') %>
+
+        <!-- Breadcrumb & Period -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
+            <a href="/admin/kolektor" class="hover:text-brand-600 transition flex items-center gap-1">
+              <i class="fa-solid fa-arrow-left"></i>
+              <span>Kembali ke Kolektor</span>
+            </a>
+            <span>/</span>
+            <span class="text-slate-800"><%= collector.name %></span>
+          </div>
+
+          <!-- Periode Selector -->
+          <form action="/admin/kolektor/<%= collector.id %>" method="GET" class="flex items-center gap-1.5">
+            <select name="month" onchange="this.form.submit()" class="px-2.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none">
+              <% for(let m=1; m<=12; m++) { %>
+                <option value="<%= m %>" <%= currentMonth === m ? 'selected' : '' %>><%= m %> - <%= ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][m-1] %></option>
+              <% } %>
+            </select>
+            <select name="year" onchange="this.form.submit()" class="px-2.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none">
+              <% for(let y=currentYear-1; y<=currentYear+1; y++) { %>
+                <option value="<%= y %>" <%= currentYear === y ? 'selected' : '' %>><%= y %></option>
+              <% } %>
+            </select>
+          </form>
+        </div>
+
+        <!-- Collector Profile Card -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+            <div class="flex items-start gap-4">
+              <div class="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-2xl font-bold">
+                <i class="fa-solid fa-motorcycle"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-extrabold text-slate-900"><%= collector.name %></h3>
+                <p class="text-xs text-slate-400 mt-0.5">Username: <b class="text-slate-700">@<%= collector.username %></b> &bull; Wilayah: <b class="text-slate-700"><%= collector.area || 'Semua Area' %></b></p>
+                <div class="flex items-center gap-2 mt-2">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold <%= collector.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500' %>">
+                    <%= collector.is_active ? 'Aktif' : 'Non-Aktif' %>
+                  </span>
+                  <% if (collector.phone) { %>
+                    <a href="https://wa.me/<%= collector.phone.replace(/[^0-9]/g, '') %>" target="_blank" class="text-emerald-600 hover:underline text-xs font-semibold flex items-center gap-1">
+                      <i class="fa-brands fa-whatsapp"></i> <%= collector.phone %>
+                    </a>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Total Collected In-Hand -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/70 text-right">
+              <span class="text-xs text-slate-500 font-semibold block mb-0.5">Total Uang Diterima (<%= monthName %>)</span>
+              <div class="text-2xl font-extrabold text-emerald-600"><%= formatRupiah(totalCollected) %></div>
+              <span class="text-[11px] text-slate-400 font-medium"><%= collectionHistory.length %> Transaksi Sukses</span>
+            </div>
+          </div>
+
+          <!-- Customer Assignment & Bills Under This Collector -->
+          <div class="pt-6">
+            <h4 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-users text-brand-600"></i>
+              <span>Daftar Pelanggan Binaan (<%= customers.length %> Pelanggan)</span>
+            </h4>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                    <th class="py-2.5 px-3">Pelanggan</th>
+                    <th class="py-2.5 px-3">Paket</th>
+                    <th class="py-2.5 px-3">Alamat</th>
+                    <th class="py-2.5 px-3 text-center">Tagihan <%= monthName %></th>
+                    <th class="py-2.5 px-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <% if (customers.length === 0) { %>
+                    <tr>
+                      <td colspan="5" class="py-6 text-center text-slate-400">Belum ada pelanggan yang ditugaskan ke kolektor ini.</td>
+                    </tr>
+                  <% } %>
+
+                  <% customers.forEach(c => { %>
+                    <tr class="hover:bg-slate-50">
+                      <td class="py-3 px-3">
+                        <div class="font-bold text-slate-800"><%= c.name %></div>
+                        <div class="text-[10px] text-slate-400 font-mono"><%= c.customer_code %> &bull; <%= c.phone %></div>
+                      </td>
+                      <td class="py-3 px-3">
+                        <span class="font-medium text-slate-700"><%= c.package_name %></span>
+                        <div class="text-[10px] text-slate-400"><%= formatRupiah(c.package_price) %></div>
+                      </td>
+                      <td class="py-3 px-3 text-slate-600 max-w-xs truncate"><%= c.address || '-' %></td>
+                      <td class="py-3 px-3 text-center">
+                        <% if (c.current_bill_status === 'lunas') { %>
+                          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <i class="fa-solid fa-check"></i> LUNAS
+                          </span>
+                        <% } else { %>
+                          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            <i class="fa-solid fa-clock"></i> BELUM
+                          </span>
+                        <% } %>
+                      </td>
+                      <td class="py-3 px-3 text-right">
+                        <a href="/admin/pelanggan/<%= c.id %>" class="text-brand-600 hover:underline font-semibold">Detail &rarr;</a>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- History of collections received by this collector -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden p-6">
+          <h4 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-receipt text-emerald-600"></i>
+            <span>Log Pembayaran yang Diterima (<%= monthName %> <%= currentYear %>)</span>
+          </h4>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                  <th class="py-2.5 px-3">Invoice</th>
+                  <th class="py-2.5 px-3">Pelanggan</th>
+                  <th class="py-2.5 px-3">Nominal</th>
+                  <th class="py-2.5 px-3">Waktu Bayar</th>
+                  <th class="py-2.5 px-3">Metode</th>
+                  <th class="py-2.5 px-3 text-right">Struk</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <% if (collectionHistory.length === 0) { %>
+                  <tr>
+                    <td colspan="6" class="py-6 text-center text-slate-400">Belum ada catatan penerimaan pembayaran di bulan ini.</td>
+                  </tr>
+                <% } %>
+
+                <% collectionHistory.forEach(h => { %>
+                  <tr class="hover:bg-slate-50">
+                    <td class="py-3 px-3 font-mono font-bold text-slate-800"><%= h.invoice_no %></td>
+                    <td class="py-3 px-3 font-semibold text-slate-800"><%= h.customer_name %></td>
+                    <td class="py-3 px-3 font-bold text-emerald-600"><%= formatRupiah(h.amount) %></td>
+                    <td class="py-3 px-3 text-slate-600"><%= formatDateTime(h.paid_at) %></td>
+                    <td class="py-3 px-3">
+                      <span class="uppercase text-[10px] font-mono px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-bold">
+                        <%= h.payment_method || 'TUNAI' %>
+                      </span>
+                    </td>
+                    <td class="py-3 px-3 text-right">
+                      <a href="/admin/tagihan/<%= h.id %>/struk" target="_blank" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 inline-block">
+                        <i class="fa-solid fa-print"></i>
+                      </a>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

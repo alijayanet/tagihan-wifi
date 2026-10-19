@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Portal Lapangan Kolektor | <%= appSettings.company_name || 'Tagihan WiFi' %></title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-['Plus_Jakarta_Sans',sans-serif] min-h-screen pb-20 antialiased">
+
+  <!-- Mobile Top App Bar -->
+  <header class="bg-gradient-to-r from-amber-600 to-orange-500 text-white sticky top-0 z-30 shadow-md">
+    <div class="max-w-xl mx-auto px-4 py-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-base">
+          <i class="fa-solid fa-motorcycle"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-sm tracking-tight leading-none"><%= user.name %></h1>
+          <p class="text-[11px] text-amber-100 font-medium mt-0.5"><i class="fa-solid fa-map-pin mr-1"></i><%= user.area || 'Petugas Lapangan' %></p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <a href="/kolektor/riwayat" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1 transition" title="Riwayat Setoran">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span class="hidden sm:inline">Setoran</span>
+        </a>
+        <a href="/logout" class="p-2 rounded-xl bg-white/10 hover:bg-rose-500 text-white text-xs transition" title="Keluar">
+          <i class="fa-solid fa-power-off"></i>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-xl mx-auto px-4 pt-4 space-y-4">
+
+    <!-- Flash Alert -->
+    <% if (typeof success !== 'undefined' && success && success.length > 0) { %>
+      <div class="p-3.5 rounded-2xl bg-emerald-500 text-white text-xs font-bold shadow-sm flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-circle-check text-sm"></i>
+          <span><%= success %></span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-white/80"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    <% } %>
+
+    <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+      <div class="p-3.5 rounded-2xl bg-rose-500 text-white text-xs font-bold shadow-sm flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-circle-exclamation text-sm"></i>
+          <span><%= error %></span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-white/80"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    <% } %>
+
+    <!-- Summary In-Hand Cards -->
+    <div class="grid grid-cols-2 gap-3">
+      <!-- Belum Ditagih -->
+      <div class="bg-white p-3.5 rounded-2xl border border-rose-100 shadow-sm">
+        <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider block">Belum Lunas (<%= monthName %>)</span>
+        <div class="text-base font-extrabold text-slate-800 mt-0.5"><%= formatRupiah(stats.belum_amount) %></div>
+        <p class="text-[11px] text-slate-400 mt-0.5"><%= stats.belum_count %> Rumah belum bayar</p>
+      </div>
+
+      <!-- Sudah Tertagih -->
+      <div class="bg-white p-3.5 rounded-2xl border border-emerald-100 shadow-sm">
+        <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block">Uang di Tangan</span>
+        <div class="text-base font-extrabold text-emerald-600 mt-0.5"><%= formatRupiah(stats.lunas_amount) %></div>
+        <p class="text-[11px] text-slate-400 mt-0.5"><%= stats.lunas_count %> Pembayaran sukses</p>
+      </div>
+    </div>
+
+    <!-- Search & Filter Tab -->
+    <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+      
+      <!-- Search input -->
+      <form action="/kolektor/dashboard" method="GET">
+        <input type="hidden" name="tab" value="<%= tab %>">
+        <div class="relative">
+          <input type="text" name="search" value="<%= search %>" placeholder="Cari nama pelanggan, alamat, HP..." 
+                 class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+        </div>
+      </form>
+
+      <!-- Tabs: Belum Lunas vs Sudah Lunas -->
+      <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl">
+        <a href="/kolektor/dashboard?tab=belum&search=<%= search %>" 
+           class="py-2 text-center text-xs font-bold rounded-lg transition <%= tab === 'belum' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-slate-800' %>">
+          <i class="fa-solid fa-clock mr-1"></i> Belum Lunas (<%= stats.belum_count %>)
+        </a>
+        <a href="/kolektor/dashboard?tab=lunas&search=<%= search %>" 
+           class="py-2 text-center text-xs font-bold rounded-lg transition <%= tab === 'lunas' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-800' %>">
+          <i class="fa-solid fa-check-circle mr-1"></i> Sudah Lunas (<%= stats.lunas_count %>)
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Bills List -->
+    <div class="space-y-3">
+      <% if (bills.length === 0) { %>
+        <div class="bg-white rounded-2xl p-8 text-center border border-slate-200">
+          <i class="fa-regular fa-face-smile text-3xl text-emerald-500 mb-2 block"></i>
+          <h4 class="font-bold text-sm text-slate-800">
+            <%= tab === 'belum' ? 'Semua tagihan sudah beres lunas!' : 'Belum ada pembayaran yang tercatat.' %>
+          </h4>
+          <p class="text-xs text-slate-400 mt-1">Tidak ada pelanggan pada kategori ini.</p>
+        </div>
+      <% } %>
+
+      <% bills.forEach(b => { %>
+        <div class="bg-white rounded-2xl border <%= b.status === 'lunas' ? 'border-emerald-200' : 'border-slate-200' %> p-4 shadow-sm space-y-3">
+          
+          <!-- Top Row: Name, Code & Status -->
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="font-extrabold text-sm text-slate-900 leading-snug"><%= b.customer_name %></h3>
+              <p class="text-[11px] text-slate-400 font-mono"><%= b.customer_code %> &bull; Tempo: Tgl <%= b.due_date || 10 %></p>
+            </div>
+            <% if (b.status === 'lunas') { %>
+              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <i class="fa-solid fa-check"></i> LUNAS
+              </span>
+            <% } else { %>
+              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200">
+                <i class="fa-solid fa-clock"></i> BELUM
+              </span>
+            <% } %>
+          </div>
+
+          <!-- Middle: Address & Package Info -->
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs space-y-1">
+            <div class="text-slate-600 flex items-start gap-1.5">
+              <i class="fa-solid fa-location-dot text-slate-400 mt-0.5 text-[11px]"></i>
+              <span class="leading-tight"><%= b.customer_address || 'Alamat belum diatur' %></span>
+            </div>
+            <div class="flex items-center justify-between pt-1 border-t border-slate-200/50 text-[11px]">
+              <span class="text-slate-500 font-medium"><%= b.package_name %> (<%= b.package_speed %>)</span>
+              <span class="font-bold text-slate-800"><%= formatRupiah(b.amount) %></span>
+            </div>
+          </div>
+
+          <!-- Actions Bar -->
+          <div class="flex items-center gap-2 pt-1">
+            
+            <% if (b.status !== 'lunas') { %>
+              <!-- Tombol Terima Bayar -->
+              <button type="button" onclick="openCollectorPayModal('<%= b.bill_id %>', '<%= b.customer_name %>', '<%= b.amount %>')"
+                      class="flex-1 py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-xs font-extrabold shadow-md shadow-emerald-600/20 active:scale-95 transition flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-money-bill-wave"></i>
+                <span>TERIMA BAYAR</span>
+              </button>
+
+              <!-- Hubungi Pelanggan WA -->
+              <a href="<%= b.waUrl %>" target="_blank" class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 active:scale-95 transition" title="Kirim Tagihan WA">
+                <i class="fa-brands fa-whatsapp text-base"></i>
+              </a>
+              <a href="tel:<%= b.customer_phone %>" class="p-2.5 rounded-xl bg-slate-100 text-slate-600 active:scale-95 transition" title="Telepon">
+                <i class="fa-solid fa-phone text-xs"></i>
+              </a>
+            <% } else { %>
+              <!-- Tombol Cetak Struk Bluetooth / Thermal -->
+              <a href="/kolektor/struk/<%= b.bill_id %>" target="_blank"
+                 class="flex-1 py-2 px-3 bg-slate-800 text-white rounded-xl text-xs font-bold text-center active:scale-95 transition flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-print"></i>
+                <span>Cetak Struk Thermal</span>
+              </a>
+
+              <!-- Kirim Kwitansi WA -->
+              <a href="<%= b.waUrl %>" target="_blank"
+                 class="py-2 px-3 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold active:scale-95 transition flex items-center justify-center gap-1.5">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+                <span>Kwitansi WA</span>
+              </a>
+            <% } %>
+
+          </div>
+
+        </div>
+      <% }) %>
+    </div>
+
+  </main>
+
+  <!-- Modal Kolektor Terima Bayar -->
+  <div id="colPayModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 animate-slide-up">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <h4 class="text-sm font-bold text-slate-800">Konfirmasi Pembayaran</h4>
+        <button onclick="closeCollectorPayModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <form action="/kolektor/bayar" method="POST" class="space-y-4">
+        <input type="hidden" id="colBillId" name="bill_id" value="">
+
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+          <p class="text-xs text-slate-500">Nama Pelanggan:</p>
+          <p id="colCustName" class="text-sm font-bold text-slate-800">-</p>
+          <p class="text-xs text-slate-500 mt-2">Nominal Tagihan:</p>
+          <p id="colAmount" class="text-xl font-black text-emerald-600">-</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Metode Bayar yang Diterima:</label>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="cursor-pointer">
+              <input type="radio" name="payment_method" value="tunai" checked class="peer sr-only">
+              <div class="p-2.5 text-center rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 transition">
+                💵 Tunai
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="payment_method" value="transfer" class="peer sr-only">
+              <div class="p-2.5 text-center rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 transition">
+                🏦 Transfer
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="payment_method" value="qris" class="peer sr-only">
+              <div class="p-2.5 text-center rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 transition">
+                📱 QRIS
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-emerald-600/25 active:scale-95 transition">
+          Sahkan Pembayaran LUNAS
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function openCollectorPayModal(billId, name, amount) {
+      const modal = document.getElementById('colPayModal');
+      document.getElementById('colBillId').value = billId;
+      document.getElementById('colCustName').innerText = name;
+      document.getElementById('colAmount').innerText = 'Rp ' + Number(amount).toLocaleString('id-ID');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+    function closeCollectorPayModal() {
+      const modal = document.getElementById('colPayModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  </script>
+
+</body>
+</html>

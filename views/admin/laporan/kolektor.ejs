@@ -1,0 +1,239 @@
+<%- include('../../partials/head') %>
+
+<div class="min-h-screen flex">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="flex-1 md:pl-64 flex flex-col min-w-0">
+    <%- include('../../partials/navbar') %>
+
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 bg-slate-50/60">
+      <div class="max-w-7xl mx-auto space-y-6">
+
+        <%- include('../../partials/alerts') %>
+
+        <!-- Header & Action -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+          <div>
+            <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-brand-600"></i>
+              <span>Laporan Transaksi & Setoran Kolektor</span>
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">Rekapitulasi pembayaran pelanggan berdasarkan rentang tanggal dan petugas kolektor</p>
+          </div>
+
+          <!-- Tombol Cetak / PDF -->
+          <a href="/admin/laporan-kolektor/cetak?start_date=<%= startDate %>&end_date=<%= endDate %>&collector_id=<%= collectorId %>&payment_method=<%= paymentMethod %>" 
+             target="_blank"
+             class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-sm transition">
+            <i class="fa-solid fa-print"></i>
+            <span>Cetak Laporan / PDF</span>
+          </a>
+        </div>
+
+        <!-- Filter Form (Rentang Tanggal, Kolektor, Metode) -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+          <form action="/admin/laporan-kolektor" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+            
+            <!-- Dari Tanggal -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">Dari Tanggal</label>
+              <input type="date" name="start_date" value="<%= startDate %>" required
+                     class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            </div>
+
+            <!-- Sampai Tanggal -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">Sampai Tanggal</label>
+              <input type="date" name="end_date" value="<%= endDate %>" required
+                     class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            </div>
+
+            <!-- Pilih Kolektor -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">Petugas Kolektor</label>
+              <select name="collector_id" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <option value="">Semua Petugas Kolektor</option>
+                <option value="admin" <%= collectorId === 'admin' ? 'selected' : '' %>>Kasir Admin (Pusat)</option>
+                <% collectors.forEach(c => { %>
+                  <option value="<%= c.id %>" <%= collectorId == c.id ? 'selected' : '' %>><%= c.name %> (<%= c.area || 'Wilayah' %>)</option>
+                <% }) %>
+              </select>
+            </div>
+
+            <!-- Metode Bayar -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">Metode Bayar</label>
+              <select name="payment_method" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <option value="">Semua Metode</option>
+                <option value="tunai" <%= paymentMethod === 'tunai' ? 'selected' : '' %>>💵 Tunai / Cash</option>
+                <option value="transfer" <%= paymentMethod === 'transfer' ? 'selected' : '' %>>🏦 Transfer Bank</option>
+                <option value="qris" <%= paymentMethod === 'qris' ? 'selected' : '' %>>📱 QRIS / E-Wallet</option>
+              </select>
+            </div>
+
+            <!-- Submit Filter -->
+            <div class="flex items-end gap-2">
+              <button type="submit" class="flex-1 py-2 px-4 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-filter"></i>
+                <span>Tampilkan</span>
+              </button>
+              <a href="/admin/laporan-kolektor" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold transition" title="Reset">
+                <i class="fa-solid fa-rotate-left"></i>
+              </a>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- 4 Summary Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          <!-- Total Uang Masuk -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm bg-gradient-to-br from-white to-emerald-50/30">
+            <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider block mb-1">Total Setoran / Masuk</span>
+            <div class="text-2xl font-black text-emerald-700"><%= formatRupiah(totalAmount) %></div>
+            <p class="text-xs text-slate-500 mt-1"><%= totalCount %> Transaksi Berhasil</p>
+          </div>
+
+          <!-- Tunai -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold text-amber-600 uppercase tracking-wider block mb-1">💵 Total Tunai (Cash)</span>
+            <div class="text-xl font-extrabold text-slate-800"><%= formatRupiah(summaryMethod.tunai) %></div>
+            <p class="text-[11px] text-slate-400 mt-1">Uang fisik di tangan kolektor</p>
+          </div>
+
+          <!-- Transfer -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold text-blue-600 uppercase tracking-wider block mb-1">🏦 Total Transfer Bank</span>
+            <div class="text-xl font-extrabold text-slate-800"><%= formatRupiah(summaryMethod.transfer) %></div>
+            <p class="text-[11px] text-slate-400 mt-1">Rekening penampung</p>
+          </div>
+
+          <!-- QRIS -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider block mb-1">📱 Total QRIS / E-Wallet</span>
+            <div class="text-xl font-extrabold text-slate-800"><%= formatRupiah(summaryMethod.qris) %></div>
+            <p class="text-[11px] text-slate-400 mt-1">Pembayaran digital</p>
+          </div>
+
+        </div>
+
+        <!-- Rekapitulasi per Petugas Kolektor -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-users-gear text-brand-600"></i>
+            <span>Rincian Setoran Per Petugas (Rentang: <%= formatDate(startDate) %> s/d <%= formatDate(endDate) %>)</span>
+          </h4>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            <% if (collectorBreakdown.length === 0) { %>
+              <div class="col-span-3 text-center py-4 text-xs text-slate-400">
+                Tidak ada data setoran pada rentang tanggal ini.
+              </div>
+            <% } %>
+
+            <% collectorBreakdown.forEach(col => { %>
+              <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 flex items-center justify-between">
+                <div>
+                  <h5 class="font-bold text-xs text-slate-800"><%= col.name %></h5>
+                  <p class="text-[11px] text-slate-400 mt-0.5"><%= col.area %></p>
+                  <span class="inline-block px-2 py-0.5 mt-1 text-[10px] font-bold rounded bg-slate-200 text-slate-700">
+                    <%= col.count %> Transaksi
+                  </span>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] text-slate-400 font-semibold block">Total Uang:</span>
+                  <span class="text-base font-extrabold text-emerald-600"><%= formatRupiah(col.total) %></span>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+
+        <!-- Detailed Transaction Table -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+            <h4 class="text-sm font-bold text-slate-800">Daftar Rincian Pembayaran Masuk (<%= totalCount %> Transaksi)</h4>
+            <span class="text-xs text-slate-400 font-mono"><%= formatDate(startDate) %> s/d <%= formatDate(endDate) %></span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                  <th class="py-3 px-4">Waktu Bayar</th>
+                  <th class="py-3 px-4">No. Invoice</th>
+                  <th class="py-3 px-4">Pelanggan</th>
+                  <th class="py-3 px-4">Paket</th>
+                  <th class="py-3 px-4">Jumlah Setoran</th>
+                  <th class="py-3 px-4 text-center">Metode</th>
+                  <th class="py-3 px-4">Petugas Kolektor</th>
+                  <th class="py-3 px-4 text-right">Struk</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <% if (transactions.length === 0) { %>
+                  <tr>
+                    <td colspan="8" class="py-10 text-center text-slate-400">
+                      <i class="fa-solid fa-receipt text-3xl mb-2 block"></i>
+                      Tidak ada transaksi pembayaran pada rentang tanggal dan filter ini.
+                    </td>
+                  </tr>
+                <% } %>
+
+                <% transactions.forEach(t => { %>
+                  <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="py-3 px-4 text-slate-600 font-medium whitespace-nowrap">
+                      <%= formatDateTime(t.paid_at) %>
+                    </td>
+                    <td class="py-3 px-4 font-mono font-bold text-slate-800 whitespace-nowrap">
+                      <%= t.invoice_no %>
+                    </td>
+                    <td class="py-3 px-4">
+                      <a href="/admin/pelanggan/<%= t.customer_id %>" class="font-bold text-slate-900 hover:text-brand-600 transition block">
+                        <%= t.customer_name %>
+                      </a>
+                      <span class="text-[10px] text-slate-400 font-mono"><%= t.customer_code %></span>
+                    </td>
+                    <td class="py-3 px-4 text-slate-700">
+                      <%= t.package_name %>
+                    </td>
+                    <td class="py-3 px-4 font-black text-emerald-600 text-sm whitespace-nowrap">
+                      <%= formatRupiah(t.amount) %>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                      <span class="uppercase text-[10px] font-mono px-2 py-0.5 rounded font-bold <%= (t.payment_method || 'tunai') === 'tunai' ? 'bg-amber-100 text-amber-800' : (t.payment_method === 'transfer' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800') %>">
+                        <%= t.payment_method || 'TUNAI' %>
+                      </span>
+                    </td>
+                    <td class="py-3 px-4 text-slate-700 font-semibold">
+                      <%= t.collector_name || 'Admin Langsung (Pusat)' %>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                      <a href="/admin/tagihan/<%= t.id %>/struk" target="_blank" title="Cetak Struk"
+                         class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 inline-block transition">
+                        <i class="fa-solid fa-print"></i>
+                      </a>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+              <% if (transactions.length > 0) { %>
+                <tfoot>
+                  <tr class="bg-slate-50 font-bold text-xs text-slate-800 border-t-2 border-slate-300">
+                    <td colspan="4" class="py-3.5 px-4 text-right uppercase tracking-wider">TOTAL KESELURUHAN:</td>
+                    <td class="py-3.5 px-4 text-emerald-700 font-black text-base"><%= formatRupiah(totalAmount) %></td>
+                    <td colspan="3" class="py-3.5 px-4 text-slate-500 font-normal">(Terdiri dari <%= totalCount %> transaksi)</td>
+                  </tr>
+                </tfoot>
+              <% } %>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

@@ -1,0 +1,45 @@
+<header class="h-20 bg-white border-b border-slate-200/80 sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 md:px-8 shadow-sm">
+  <!-- Left Side: Mobile Toggle & Page Title -->
+  <div class="flex items-center gap-3">
+    <button id="sidebarToggle" type="button" class="md:hidden w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors">
+      <i class="fa-solid fa-bars text-lg"></i>
+    </button>
+    <div>
+      <h2 class="text-xl font-bold text-slate-800 tracking-tight leading-none"><%= title %></h2>
+      <p class="text-xs text-slate-400 mt-1 hidden sm:block">
+        <i class="fa-regular fa-calendar-check mr-1"></i>
+        <%= new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) %>
+      </p>
+    </div>
+  </div>
+
+  <!-- Right Side Actions & Profile -->
+  <div class="flex items-center gap-3">
+    <!-- Quick Button Tagihan Belum Lunas -->
+    <a href="/admin/tagihan?status=belum" class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-colors">
+      <i class="fa-solid fa-circle-exclamation text-rose-500"></i>
+      <span>Tagihan Tertunda</span>
+    </a>
+
+    <!-- Quick Button Tambah Pelanggan -->
+    <a href="/admin/pelanggan#modalTambah" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 text-white shadow-sm hover:bg-brand-700 transition-colors">
+      <i class="fa-solid fa-user-plus"></i>
+      <span class="hidden md:inline">Tambah Pelanggan</span>
+    </a>
+
+    <div class="h-6 w-px bg-slate-200 mx-1"></div>
+
+    <!-- User Profile Dropdown or info -->
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-sm ring-2 ring-brand-100">
+        <%= (user && user.name) ? user.name.charAt(0) : 'A' %>
+      </div>
+      <div class="hidden lg:block text-left">
+        <p class="text-xs font-bold text-slate-800 leading-tight"><%= (user && user.name) || 'Admin' %></p>
+        <p class="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Online
+        </p>
+      </div>
+    </div>
+  </div>
+</header>

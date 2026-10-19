@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  
+  <style>
+    /* Styling khusus Struk Thermal 58mm / 80mm */
+    @page {
+      margin: 0;
+      size: auto;
+    }
+
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      line-height: 1.35;
+      color: #000;
+      background: #f1f5f9;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .no-print {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      text-decoration: none;
+      color: #334155;
+    }
+    .btn-primary {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb;
+    }
+
+    .receipt-container {
+      width: 58mm; /* Standar Thermal Paper 58mm */
+      background: #fff;
+      padding: 12px 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      box-sizing: border-box;
+    }
+
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .bold { font-weight: bold; }
+    .title { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+    .subtitle { font-size: 10px; margin-bottom: 6px; }
+
+    .divider {
+      border-top: 1px dashed #000;
+      margin: 6px 0;
+    }
+
+    .table-info {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .table-info td {
+      padding: 2px 0;
+      vertical-align: top;
+    }
+    .label {
+      width: 40%;
+      color: #333;
+    }
+    .value {
+      width: 60%;
+      text-align: right;
+    }
+
+    .total-box {
+      margin: 8px 0;
+      padding: 4px 0;
+      border-top: 1px dashed #000;
+      border-bottom: 1px dashed #000;
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .footer-note {
+      font-size: 10px;
+      margin-top: 8px;
+      text-align: center;
+      line-height: 1.25;
+      white-space: pre-line;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        padding: 0;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .receipt-container {
+        width: 100%;
+        max-width: 58mm;
+        box-shadow: none;
+        padding: 4px 2px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Tombol Aksi Layar -->
+  <div class="no-print">
+    <button onclick="window.print()" class="btn btn-primary">🖨️ Cetak Struk Sekarang</button>
+    <button onclick="window.close()" class="btn">Tutup</button>
+  </div>
+
+  <!-- Kontainer Struk Thermal -->
+  <div class="receipt-container">
+    <div class="text-center">
+      <div class="title"><%= settings.company_name || 'TAGIHAN WIFI' %></div>
+      <div class="subtitle"><%= settings.company_tagline || 'Layanan Internet Cepat' %></div>
+      <div class="subtitle"><%= settings.company_address || '' %></div>
+      <% if (settings.company_phone) { %>
+        <div class="subtitle">WA/Telp: <%= settings.company_phone %></div>
+      <% } %>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="text-center bold" style="font-size: 12px; margin: 4px 0;">
+      BUKTI PEMBAYARAN LUNAS
+    </div>
+
+    <div class="divider"></div>
+
+    <table class="table-info">
+      <tr>
+        <td class="label">No. Invoice</td>
+        <td class="value bold"><%= bill.invoice_no %></td>
+      </tr>
+      <tr>
+        <td class="label">Tgl Bayar</td>
+        <td class="value"><%= formatDateTime(bill.paid_at) %></td>
+      </tr>
+      <tr>
+        <td class="label">ID Pelanggan</td>
+        <td class="value"><%= bill.customer_code %></td>
+      </tr>
+      <tr>
+        <td class="label">Nama</td>
+        <td class="value bold"><%= bill.customer_name %></td>
+      </tr>
+      <tr>
+        <td class="label">Alamat</td>
+        <td class="value"><%= bill.customer_address || '-' %></td>
+      </tr>
+      <tr>
+        <td class="label">Periode</td>
+        <td class="value bold"><%= periodName %></td>
+      </tr>
+      <tr>
+        <td class="label">Paket</td>
+        <td class="value"><%= bill.package_name %> (<%= bill.package_speed %>)</td>
+      </tr>
+      <tr>
+        <td class="label">Metode</td>
+        <td class="value"><%= (bill.payment_method || 'Tunai').toUpperCase() %></td>
+      </tr>
+      <tr>
+        <td class="label">Petugas</td>
+        <td class="value"><%= bill.collector_name || 'Admin Kas' %></td>
+      </tr>
+    </table>
+
+    <div class="total-box">
+      <span>TOTAL BAYAR:</span>
+      <span><%= formatRupiah(bill.amount) %></span>
+    </div>
+
+    <div class="text-center bold" style="margin: 4px 0; font-size: 11px;">
+      STATUS: LUNAS
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="footer-note">
+      <%= settings.receipt_footer || 'Terima kasih atas pembayaran Anda.\nSimpan struk ini sebagai bukti pembayaran yang sah.' %>
+    </div>
+  </div>
+
+  <script>
+    // Buka dialog print otomatis jika ada parameter print=1
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('autoprint') === '1') {
+      window.addEventListener('load', () => {
+        window.print();
+      });
+    }
+  </script>
+</body>
+</html>

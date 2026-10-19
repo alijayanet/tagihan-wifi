@@ -1,0 +1,190 @@
+<%- include('../../partials/head') %>
+
+<div class="min-h-screen flex">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="flex-1 md:pl-64 flex flex-col min-w-0">
+    <%- include('../../partials/navbar') %>
+
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 bg-slate-50/60">
+      <div class="max-w-7xl mx-auto space-y-6">
+
+        <%- include('../../partials/alerts') %>
+
+        <!-- Header & Action -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+          <div>
+            <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-box-archive text-brand-600"></i>
+              <span>Daftar Paket Internet</span>
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">Kelola paket bandwidth, kecepatan, dan tarif langganan bulanan</p>
+          </div>
+
+          <button onclick="openAddModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-sm transition">
+            <i class="fa-solid fa-plus"></i>
+            <span>Tambah Paket Baru</span>
+          </button>
+        </div>
+
+        <!-- Cards Grid of Packages -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <% packages.forEach(pkg => { %>
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 flex flex-col justify-between hover:border-brand-400 hover:shadow-md transition-all">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold <%= pkg.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500' %>">
+                    <%= pkg.is_active ? 'Aktif' : 'Non-Aktif' %>
+                  </span>
+                  <div class="w-8 h-8 rounded-lg bg-blue-50 text-brand-600 flex items-center justify-center text-sm font-bold">
+                    <i class="fa-solid fa-gauge"></i>
+                  </div>
+                </div>
+
+                <h4 class="text-base font-extrabold text-slate-800"><%= pkg.name %></h4>
+                <div class="text-xl font-black text-brand-600 mt-1">
+                  <%= formatRupiah(pkg.price) %>
+                  <span class="text-xs font-normal text-slate-400">/bulan</span>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-100 space-y-2 text-xs">
+                  <div class="flex items-center justify-between text-slate-600">
+                    <span class="text-slate-400">Kecepatan:</span>
+                    <span class="font-bold text-slate-800"><%= pkg.speed %></span>
+                  </div>
+                  <div class="flex items-center justify-between text-slate-600">
+                    <span class="text-slate-400">Pelanggan Aktif:</span>
+                    <span class="font-bold text-slate-800"><%= pkg.active_customer_count %> User</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 pt-1 leading-relaxed">
+                    <%= pkg.description || 'Tidak ada keterangan tambahan.' %>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Action buttons -->
+              <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+                <button type="button" 
+                        onclick="openEditModal('<%= pkg.id %>', '<%= pkg.name %>', '<%= pkg.speed %>', '<%= pkg.price %>', '<%= pkg.description %>', '<%= pkg.is_active %>')"
+                        class="flex-1 py-1.5 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition text-center">
+                  <i class="fa-solid fa-pen-to-square mr-1"></i> Edit
+                </button>
+                <form action="/admin/paket/<%= pkg.id %>/delete" method="POST" onsubmit="return confirm('Hapus paket <%= pkg.name %>?')" class="inline">
+                  <button type="submit" class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition" title="Hapus Paket">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </form>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal Tambah Paket -->
+<div id="addModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <h4 class="text-sm font-bold text-slate-800">Tambah Paket Internet</h4>
+      <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form action="/admin/paket" method="POST" class="space-y-3.5">
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Paket</label>
+        <input type="text" name="name" required placeholder="Contoh: Paket Hemat" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Kecepatan</label>
+          <input type="text" name="speed" required placeholder="Contoh: 10 Mbps" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Harga Bulanan (Rp)</label>
+          <input type="number" name="price" required placeholder="100000" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi / Keterangan</label>
+        <textarea name="description" rows="3" placeholder="Contoh: Cocok untuk kebutuhan keluarga 3-4 HP" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+      </div>
+      <div class="mt-5 flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeAddModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200">Batal</button>
+        <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-sm">Simpan Paket</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Edit Paket -->
+<div id="editModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <h4 class="text-sm font-bold text-slate-800">Edit Paket Internet</h4>
+      <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="editForm" method="POST" class="space-y-3.5">
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Paket</label>
+        <input type="text" id="editName" name="name" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Kecepatan</label>
+          <input type="text" id="editSpeed" name="speed" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Harga Bulanan (Rp)</label>
+          <input type="number" id="editPrice" name="price" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi / Keterangan</label>
+        <textarea id="editDescription" name="description" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+      </div>
+      <div class="flex items-center gap-2 pt-1">
+        <input type="checkbox" id="editActive" name="is_active" value="1" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+        <label for="editActive" class="text-xs font-semibold text-slate-700">Paket Aktif & Tersedia untuk Pelanggan</label>
+      </div>
+      <div class="mt-5 flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeEditModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200">Batal</button>
+        <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-sm">Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openAddModal() {
+    const modal = document.getElementById('addModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+  function closeAddModal() {
+    const modal = document.getElementById('addModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+
+  function openEditModal(id, name, speed, price, description, isActive) {
+    const modal = document.getElementById('editModal');
+    document.getElementById('editForm').action = `/admin/paket/${id}/update`;
+    document.getElementById('editName').value = name;
+    document.getElementById('editSpeed').value = speed;
+    document.getElementById('editPrice').value = price;
+    document.getElementById('editDescription').value = description;
+    document.getElementById('editActive').checked = (isActive == 1);
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+  function closeEditModal() {
+    const modal = document.getElementById('editModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+</script>
+
+<%- include('../../partials/footer') %>

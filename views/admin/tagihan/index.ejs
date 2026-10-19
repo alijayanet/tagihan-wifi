@@ -1,0 +1,360 @@
+<%- include('../../partials/head') %>
+
+<div class="min-h-screen flex">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="flex-1 md:pl-64 flex flex-col min-w-0">
+    <%- include('../../partials/navbar') %>
+
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 bg-slate-50/60">
+      <div class="max-w-7xl mx-auto space-y-6">
+
+        <%- include('../../partials/alerts') %>
+
+        <!-- Header & Bulk Generator Action -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+          <div>
+            <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-file-invoice-dollar text-brand-600"></i>
+              <span>Manajemen Tagihan & Kas Masuk</span>
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">Kelola tagihan bulanan, pantau status lunas & belum lunas, serta cetak struk</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Form Blast Tagihan Belum Lunas via Fonnte (Opsional) -->
+            <form action="/admin/tagihan/blast-fonnte" method="POST" onsubmit="return confirm('Kirim notifikasi tagihan ke SEMUA pelanggan yang belum lunas di periode <%= monthName %> <%= currentYear %> via WhatsApp Gateway Fonnte?')">
+              <input type="hidden" name="month" value="<%= currentMonth %>">
+              <input type="hidden" name="year" value="<%= currentYear %>">
+              <button type="submit" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 rounded-xl text-xs font-bold shadow-sm transition">
+                <i class="fa-solid fa-paper-plane text-teal-600"></i>
+                <span>Blast WA Tagihan (Fonnte)</span>
+              </button>
+            </form>
+
+            <!-- Form Generate Tagihan Baru Periode Ini -->
+            <form action="/admin/tagihan/generate" method="POST" onsubmit="return confirm('Buat tagihan untuk semua pelanggan aktif pada periode <%= monthName %> <%= currentYear %>? Tagihan yang sudah ada tidak akan diduplikasi.')">
+              <input type="hidden" name="month" value="<%= currentMonth %>">
+              <input type="hidden" name="year" value="<%= currentYear %>">
+              <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Generate Tagihan <%= monthName %></span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Metric Summary for the selected period -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Total Tagihan -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Total Nilai Tagihan</span>
+            <div class="text-xl font-extrabold text-slate-900"><%= formatRupiah(stats.total_amount) %></div>
+            <p class="text-xs text-slate-500 mt-1"><%= stats.total_bills %> Tagihan Terbit</p>
+          </div>
+
+          <!-- Lunas -->
+          <div class="bg-white p-4 rounded-2xl border border-emerald-200 shadow-sm bg-gradient-to-br from-white to-emerald-50/40">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider block mb-1">Sudah LUNAS</span>
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            </div>
+            <div class="text-xl font-extrabold text-emerald-700"><%= formatRupiah(stats.lunas_amount) %></div>
+            <p class="text-xs text-emerald-600 mt-1 font-semibold"><%= stats.lunas_count %> Pelanggan Lunas</p>
+          </div>
+
+          <!-- Belum Lunas -->
+          <div class="bg-white p-4 rounded-2xl border border-rose-200 shadow-sm bg-gradient-to-br from-white to-rose-50/40">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-rose-700 uppercase tracking-wider block mb-1">BELUM Lunas (Tertunda)</span>
+              <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+            </div>
+            <div class="text-xl font-extrabold text-rose-700"><%= formatRupiah(stats.belum_amount) %></div>
+            <p class="text-xs text-rose-600 mt-1 font-semibold"><%= stats.belum_count %> Menunggu Pembayaran</p>
+          </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+          <form action="/admin/tagihan" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            
+            <!-- Cari -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Cari Invoice / Nama</label>
+              <input type="text" name="search" value="<%= search %>" placeholder="No. Invoice, nama..." 
+                     class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            </div>
+
+            <!-- Periode Bulan & Tahun -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Periode Bulan</label>
+              <div class="grid grid-cols-2 gap-1.5">
+                <select name="month" class="px-2 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none">
+                  <% for(let m=1; m<=12; m++) { %>
+                    <option value="<%= m %>" <%= currentMonth === m ? 'selected' : '' %>><%= m %> - <%= ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][m-1] %></option>
+                  <% } %>
+                </select>
+                <select name="year" class="px-2 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none">
+                  <% for(let y=currentYear-1; y<=currentYear+1; y++) { %>
+                    <option value="<%= y %>" <%= currentYear === y ? 'selected' : '' %>><%= y %></option>
+                  <% } %>
+                </select>
+              </div>
+            </div>
+
+            <!-- Filter Status (Lunas / Belum) -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Filter Status</label>
+              <select name="status" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none">
+                <option value="">Semua Status (Lunas & Belum)</option>
+                <option value="belum" <%= filterStatus === 'belum' ? 'selected' : '' %>>🔴 Belum Lunas Saja</option>
+                <option value="lunas" <%= filterStatus === 'lunas' ? 'selected' : '' %>>🟢 Lunas Saja</option>
+              </select>
+            </div>
+
+            <!-- Filter Kolektor -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Filter Kolektor</label>
+              <select name="collector" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none">
+                <option value="">Semua Kolektor</option>
+                <% collectors.forEach(c => { %>
+                  <option value="<%= c.id %>" <%= filterCollector == c.id ? 'selected' : '' %>><%= c.name %></option>
+                <% }) %>
+              </select>
+            </div>
+
+            <!-- Filter Action Button -->
+            <div class="flex items-end gap-2">
+              <button type="submit" class="flex-1 py-2 px-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-filter text-xs"></i> Terapkan
+              </button>
+              <a href="/admin/tagihan" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold transition" title="Reset Filter">
+                <i class="fa-solid fa-arrows-rotate"></i>
+              </a>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- Bills Table -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/70">
+                  <th class="py-3.5 px-4">No. Invoice</th>
+                  <th class="py-3.5 px-4">Pelanggan</th>
+                  <th class="py-3.5 px-4">Paket</th>
+                  <th class="py-3.5 px-4">Jumlah Tagihan</th>
+                  <th class="py-3.5 px-4 text-center">Status</th>
+                  <th class="py-3.5 px-4">Pembayaran & Penerima</th>
+                  <th class="py-3.5 px-4 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-xs">
+                <% if (bills.length === 0) { %>
+                  <tr>
+                    <td colspan="7" class="py-12 text-center text-slate-400">
+                      <i class="fa-solid fa-file-invoice text-3xl mb-2 block"></i>
+                      Tidak ada tagihan yang cocok. Klik tombol "Generate Tagihan" untuk membuat tagihan periode ini.
+                    </td>
+                  </tr>
+                <% } %>
+
+                <% bills.forEach(b => { %>
+                  <tr class="hover:bg-slate-50/80 transition-colors">
+                    
+                    <!-- Invoice No -->
+                    <td class="py-3.5 px-4 font-mono font-bold text-slate-800">
+                      <%= b.invoice_no %>
+                    </td>
+
+                    <!-- Customer -->
+                    <td class="py-3.5 px-4">
+                      <a href="/admin/pelanggan/<%= b.customer_id %>" class="font-bold text-slate-900 hover:text-brand-600 transition block">
+                        <%= b.customer_name %>
+                      </a>
+                      <span class="text-[11px] text-slate-400 font-mono"><%= b.customer_code %> &bull; <%= b.customer_phone %></span>
+                    </td>
+
+                    <!-- Package -->
+                    <td class="py-3.5 px-4">
+                      <div class="font-semibold text-slate-700"><%= b.package_name %></div>
+                      <span class="text-[11px] text-brand-600 font-bold"><%= b.package_speed %></span>
+                    </td>
+
+                    <!-- Amount -->
+                    <td class="py-3.5 px-4 font-black text-slate-900 text-sm">
+                      <%= formatRupiah(b.amount) %>
+                    </td>
+
+                    <!-- Status (LUNAS vs BELUM) -->
+                    <td class="py-3.5 px-4 text-center">
+                      <% if (b.status === 'lunas') { %>
+                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <i class="fa-solid fa-check"></i> LUNAS
+                        </span>
+                      <% } else { %>
+                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
+                          <i class="fa-solid fa-clock"></i> BELUM LUNAS
+                        </span>
+                      <% } %>
+                    </td>
+
+                    <!-- Payment Info & Collector -->
+                    <td class="py-3.5 px-4">
+                      <% if (b.status === 'lunas') { %>
+                        <div class="font-medium text-slate-700"><%= formatDateTime(b.paid_at) %></div>
+                        <div class="text-[11px] text-slate-500 mt-0.5">
+                          Metode: <b class="uppercase font-mono text-slate-800"><%= b.payment_method || 'TUNAI' %></b>
+                          <% if (b.collector_name) { %>
+                            &bull; Petugas: <b class="text-slate-800"><%= b.collector_name %></b>
+                          <% } else { %>
+                            &bull; <span class="italic text-slate-400">Kas Admin</span>
+                          <% } %>
+                        </div>
+                      <% } else { %>
+                        <span class="text-slate-400 italic">Petugas: <%= b.customer_collector_name || 'Tanpa Kolektor' %></span>
+                      <% } %>
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="py-3.5 px-4 text-right">
+                      <div class="inline-flex items-center gap-1.5">
+                        <% if (b.status === 'lunas') { %>
+                          <!-- Print Thermal Receipt -->
+                          <a href="/admin/tagihan/<%= b.id %>/struk" target="_blank" title="Cetak Struk Thermal"
+                             class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                            <i class="fa-solid fa-print text-sm"></i>
+                          </a>
+
+                          <!-- Send WhatsApp Kwitansi via Fonnte Gateway -->
+                          <form action="/admin/tagihan/<%= b.id %>/kirim-fonnte" method="POST" onsubmit="return confirm('Kirim kwitansi ke WhatsApp <%= b.customer_name %> via Fonnte Gateway?')" class="inline">
+                            <button type="submit" title="Kirim Kwitansi Otomatis via Fonnte Gateway" class="p-2 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 transition">
+                              <i class="fa-solid fa-paper-plane text-xs"></i>
+                            </button>
+                          </form>
+
+                          <!-- Send WhatsApp Kwitansi Manual Web -->
+                          <a href="<%= b.waUrl %>" target="_blank" title="Kirim Kwitansi via WhatsApp Web / App"
+                             class="p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 transition">
+                            <i class="fa-brands fa-whatsapp text-sm"></i>
+                          </a>
+
+                          <!-- Revert / Cancel Payment -->
+                          <form action="/admin/tagihan/<%= b.id %>/batal" method="POST" onsubmit="return confirm('Batalkan pelunasan tagihan ini? Status akan kembali menjadi BELUM LUNAS.')" class="inline">
+                            <button type="submit" title="Batalkan Pelunasan" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 transition">
+                              <i class="fa-solid fa-arrow-rotate-left text-sm"></i>
+                            </button>
+                          </form>
+                        <% } else { %>
+                          <!-- Pay Button -->
+                          <button type="button" onclick="openBillPayModal('<%= b.id %>', '<%= b.customer_name %>', '<%= b.amount %>')"
+                                  class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition">
+                            <i class="fa-solid fa-money-bill-wave mr-1"></i> Bayar
+                          </button>
+
+                          <!-- Send WhatsApp Tagihan via Fonnte Gateway -->
+                          <form action="/admin/tagihan/<%= b.id %>/kirim-fonnte" method="POST" onsubmit="return confirm('Kirim notifikasi tagihan ke WhatsApp <%= b.customer_name %> via Fonnte Gateway?')" class="inline">
+                            <button type="submit" title="Kirim Tagihan Otomatis via Fonnte Gateway" class="p-2 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 transition">
+                              <i class="fa-solid fa-paper-plane text-xs"></i>
+                            </button>
+                          </form>
+
+                          <!-- Send WhatsApp Reminder Manual Web -->
+                          <a href="<%= b.waUrl %>" target="_blank" title="Kirim Tagihan via WhatsApp Web / App"
+                             class="p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 transition">
+                            <i class="fa-brands fa-whatsapp text-sm"></i>
+                          </a>
+                        <% } %>
+
+                        <!-- Hapus Tagihan -->
+                        <form action="/admin/tagihan/<%= b.id %>/hapus" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus tagihan <%= b.invoice_no %>? Tindakan ini tidak dapat dibatalkan.')" class="inline">
+                          <button type="submit" title="Hapus Tagihan" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition">
+                            <i class="fa-solid fa-trash-can text-sm"></i>
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal Bayar Tagihan -->
+<div id="billPayModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <h4 class="text-sm font-bold text-slate-800">Proses Pembayaran Tagihan</h4>
+      <button onclick="closeBillPayModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <form id="billPayForm" method="POST">
+      <div class="space-y-3.5">
+        <div>
+          <p class="text-xs text-slate-500">Nama Pelanggan:</p>
+          <p id="bpName" class="text-sm font-bold text-slate-800">-</p>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500">Nominal Tagihan:</p>
+          <p id="bpAmount" class="text-base font-extrabold text-emerald-600">-</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Metode Bayar</label>
+          <select name="payment_method" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <option value="tunai">Tunai / Cash</option>
+            <option value="transfer">Transfer Bank</option>
+            <option value="qris">QRIS / E-Wallet</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Petugas Penerima</label>
+          <select name="collected_by" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <option value="">Admin Langsung (Pusat)</option>
+            <% collectors.forEach(c => { %>
+              <option value="<%= c.id %>"><%= c.name %> (<%= c.area || 'Kolektor' %>)</option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan</label>
+          <input type="text" name="notes" placeholder="Opsional: Keterangan setoran" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+      </div>
+
+      <div class="mt-6 flex items-center justify-end gap-2">
+        <button type="button" onclick="closeBillPayModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200">Batal</button>
+        <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm">Set LUNAS</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openBillPayModal(billId, name, amount) {
+    const modal = document.getElementById('billPayModal');
+    document.getElementById('billPayForm').action = `/admin/tagihan/${billId}/bayar`;
+    document.getElementById('bpName').innerText = name;
+    document.getElementById('bpAmount').innerText = 'Rp ' + Number(amount).toLocaleString('id-ID');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+  function closeBillPayModal() {
+    const modal = document.getElementById('billPayModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+</script>
+
+<%- include('../../partials/footer') %>

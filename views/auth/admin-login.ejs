@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Administrator | <%= (settings && settings.company_name) || 'Tagihan WiFi' %></title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 min-h-screen flex items-center justify-center p-4 relative overflow-hidden font-['Plus_Jakarta_Sans',sans-serif]">
+  
+  <!-- Background Glow & Shapes -->
+  <div class="absolute -top-40 -right-40 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+  <div class="w-full max-w-md relative z-10">
+    
+    <!-- Branding Header -->
+    <div class="text-center mb-8">
+      <div class="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 items-center justify-center text-white text-2xl shadow-xl shadow-blue-500/25 mb-4 ring-4 ring-blue-500/20">
+        <i class="fa-solid fa-wifi"></i>
+      </div>
+      <h1 class="text-2xl font-extrabold text-white tracking-tight">
+        <%= (settings && settings.company_name) || 'Sistem Tagihan WiFi' %>
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">
+        <%= (settings && settings.company_tagline) || 'Panel Akses Khusus Administrator' %>
+      </p>
+    </div>
+
+    <!-- Login Card -->
+    <div class="bg-slate-800/90 backdrop-blur-xl border border-slate-700/80 rounded-3xl p-8 shadow-2xl shadow-black/40">
+      
+      <div class="flex items-center justify-between pb-6 mb-6 border-b border-slate-700/60">
+        <div>
+          <h2 class="text-lg font-bold text-white">Login Admin</h2>
+          <p class="text-xs text-slate-400">Masuk untuk mengelola sistem & keuangan</p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[11px] font-semibold">
+          <i class="fa-solid fa-shield-halved"></i> Admin Portal
+        </span>
+      </div>
+
+      <!-- Flash Messages -->
+      <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+        <div class="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium flex items-center gap-2.5">
+          <i class="fa-solid fa-circle-exclamation text-sm flex-shrink-0"></i>
+          <span><%= error %></span>
+        </div>
+      <% } %>
+
+      <% if (typeof success !== 'undefined' && success && success.length > 0) { %>
+        <div class="mb-5 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium flex items-center gap-2.5">
+          <i class="fa-solid fa-circle-check text-sm flex-shrink-0"></i>
+          <span><%= success %></span>
+        </div>
+      <% } %>
+
+      <!-- Form -->
+      <form action="/admin/login" method="POST" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Username Admin</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <i class="fa-regular fa-user text-sm"></i>
+            </span>
+            <input type="text" name="username" required autofocus placeholder="Masukkan username admin"
+                   class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Password</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <i class="fa-solid fa-lock text-sm"></i>
+            </span>
+            <input type="password" name="password" required placeholder="••••••••"
+                   class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all">
+          </div>
+        </div>
+
+        <button type="submit" 
+                class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition-all duration-200 flex items-center justify-center gap-2 mt-2">
+          <span>Masuk ke Dashboard</span>
+          <i class="fa-solid fa-arrow-right text-xs"></i>
+        </button>
+      </form>
+
+
+      <!-- Switch to Kolektor Portal -->
+      <div class="mt-6 pt-5 border-t border-slate-700/60 text-center">
+        <p class="text-xs text-slate-400">Petugas penagihan lapangan?</p>
+        <a href="/kolektor/login" 
+           class="inline-flex items-center gap-2 mt-2 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors">
+          <i class="fa-solid fa-mobile-screen"></i> Buka Portal Login Kolektor
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Subtitle info -->
+    <div class="mt-6 text-center text-xs text-slate-500">
+      <p>Target: Armbian / Linux SBC &bull; SQLite WAL Mode &bull; Standalone</p>
+    </div>
+
+  </div>
+
+</body>
+</html>

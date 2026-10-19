@@ -1,0 +1,337 @@
+<%- include('../../partials/head') %>
+
+<div class="min-h-screen flex">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="flex-1 md:pl-64 flex flex-col min-w-0">
+    <%- include('../../partials/navbar') %>
+
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 bg-slate-50/60">
+      <div class="max-w-4xl mx-auto space-y-6">
+
+        <%- include('../../partials/alerts') %>
+
+        <!-- Header -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+          <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-sliders text-brand-600"></i>
+            <span>Pengaturan Sistem & Profil Usaha</span>
+          </h3>
+          <p class="text-xs text-slate-500 mt-0.5">Kustomisasi identitas tagihan, template WhatsApp, struk, dan keamanan akun</p>
+        </div>
+
+        <form action="/admin/pengaturan" method="POST" class="space-y-6">
+
+          <!-- 1. Profil Usaha -->
+          <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+            <div class="border-b border-slate-100 pb-3 flex items-center gap-2 text-sm font-bold text-slate-800">
+              <i class="fa-solid fa-building text-brand-600"></i>
+              <span>Profil Usaha / RT-RW Net</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Usaha / Brand *</label>
+                <input type="text" name="company_name" value="<%= settings.company_name || '' %>" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Slogan / Tagline</label>
+                <input type="text" name="company_tagline" value="<%= settings.company_tagline || '' %>" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor WhatsApp / CS</label>
+                <input type="text" name="company_phone" value="<%= settings.company_phone || '' %>" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Default Tanggal Jatuh Tempo (1 - 28)</label>
+                <input type="number" name="default_due_date" value="<%= settings.default_due_date || '10' %>" min="1" max="28" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Usaha</label>
+                <input type="text" name="company_address" value="<%= settings.company_address || '' %>" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Pesan Template WhatsApp -->
+          <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+            <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+              <div class="flex items-center gap-2 text-sm font-bold text-slate-800">
+                <i class="fa-brands fa-whatsapp text-emerald-600 text-base"></i>
+                <span>Template Notifikasi WhatsApp</span>
+              </div>
+              <span class="text-[11px] text-slate-400">Variabel: {nama}, {paket}, {total}, {periode}, {jatuh_tempo}, {no_invoice}</span>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Template Pengingat Tagihan (Belum Lunas)</label>
+              <textarea name="wa_reminder_template" rows="4" class="w-full font-mono text-xs px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none"><%= settings.wa_reminder_template || '' %></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Template Bukti Bayar / Kwitansi (Lunas)</label>
+              <textarea name="wa_receipt_template" rows="4" class="w-full font-mono text-xs px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none"><%= settings.wa_receipt_template || '' %></textarea>
+            </div>
+          </div>
+
+          <!-- 3. Catatan Kaki Struk Thermal -->
+          <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+            <div class="border-b border-slate-100 pb-3 flex items-center gap-2 text-sm font-bold text-slate-800">
+              <i class="fa-solid fa-receipt text-brand-600"></i>
+              <span>Catatan Bawah Struk Thermal</span>
+            </div>
+
+            <div>
+              <textarea name="receipt_footer" rows="2" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none"><%= settings.receipt_footer || '' %></textarea>
+              <p class="text-[11px] text-slate-400 mt-1">Teks ini akan muncul di bagian paling bawah struk thermal saat dicetak.</p>
+            </div>
+          </div>
+
+          <!-- 4. Koneksi MikroTik RouterOS API (Opsional) -->
+          <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+            <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+              <div class="flex items-center gap-2 text-sm font-bold text-slate-800">
+                <i class="fa-solid fa-network-wired text-brand-600"></i>
+                <span>Integrasi MikroTik RouterOS API (Opsional)</span>
+              </div>
+              <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                Opsional
+              </span>
+            </div>
+
+            <!-- Penjelasan bahwa ini opsional -->
+            <div class="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start gap-2.5">
+              <i class="fa-solid fa-circle-info text-amber-600 text-sm mt-0.5 flex-shrink-0"></i>
+              <div class="leading-relaxed">
+                <p class="font-bold mb-0.5">Bersifat Opsional (Bisa Dikosongkan)</p>
+                <p class="text-[11px] text-amber-800">
+                  Jika Anda tidak menggunakan MikroTik, biarkan bagian ini kosong atau nonaktif. Sistem penagihan, kwitansi, cetak struk, dan status pelanggan akan tetap berjalan lancar 100% tanpa gangguan.
+                </p>
+              </div>
+            </div>
+
+            <!-- Toggle Aktifkan -->
+            <div class="flex items-center gap-2.5 pt-1">
+              <input type="checkbox" id="mikrotik_enabled" name="mikrotik_enabled" value="1" <%= settings.mikrotik_enabled === '1' ? 'checked' : '' %> class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+              <label for="mikrotik_enabled" class="text-xs font-bold text-slate-700 cursor-pointer">
+                Aktifkan Koneksi MikroTik RouterOS
+              </label>
+            </div>
+
+            <!-- Form fields IP, Port, User, Pass -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Host / IP Router</label>
+                <input type="text" id="mtHost" name="mikrotik_host" value="<%= settings.mikrotik_host || '' %>" placeholder="192.168.88.1" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Port API (Default: 8728)</label>
+                <input type="number" id="mtPort" name="mikrotik_port" value="<%= settings.mikrotik_port || '8728' %>" placeholder="8728" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Username API</label>
+                <input type="text" id="mtUser" name="mikrotik_user" value="<%= settings.mikrotik_user || '' %>" placeholder="admin" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Password API</label>
+                <input type="password" id="mtPass" name="mikrotik_pass" value="<%= settings.mikrotik_pass || '' %>" placeholder="••••••••" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Tombol Test Koneksi & Result -->
+            <div class="pt-2 flex flex-wrap items-center gap-3">
+              <button type="button" onclick="testMikrotikConnection()" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5">
+                <i class="fa-solid fa-plug text-xs"></i>
+                <span id="btnTestText">Uji Koneksi MikroTik</span>
+              </button>
+              <div id="testResult" class="text-xs font-semibold hidden"></div>
+            </div>
+          </div>
+
+          <!-- 5. WhatsApp Gateway Fonnte (Opsional) -->
+          <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+            <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+              <div class="flex items-center gap-2 text-sm font-bold text-slate-800">
+                <i class="fa-brands fa-whatsapp text-emerald-600 text-lg"></i>
+                <span>WhatsApp Gateway API (Fonnte) - Opsional</span>
+              </div>
+              <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                Otomatisasi WA
+              </span>
+            </div>
+
+            <!-- Penjelasan bahwa ini opsional -->
+            <div class="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl text-xs text-emerald-950 flex items-start gap-2.5">
+              <i class="fa-solid fa-circle-check text-emerald-600 text-sm mt-0.5 flex-shrink-0"></i>
+              <div class="leading-relaxed">
+                <p class="font-bold mb-0.5">Kirim Tagihan & Kwitansi WhatsApp Otomatis Tanpa Buka Web WhatsApp!</p>
+                <p class="text-[11px] text-emerald-800">
+                  Dengan mengintegrasikan API Fonnte (<a href="https://fonnte.com" target="_blank" class="underline font-bold text-emerald-700">fonnte.com</a>), sistem dapat mengirim tagihan otomatis dan bukti bayar langsung ke WhatsApp pelanggan dari server di latar belakang. Jika dinonaktifkan, tombol manual WA tetap dapat digunakan.
+                </p>
+              </div>
+            </div>
+
+            <!-- Toggle Aktifkan & Auto Send -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div class="flex items-center gap-2.5">
+                <input type="checkbox" id="fonnte_enabled" name="fonnte_enabled" value="1" <%= settings.fonnte_enabled === '1' ? 'checked' : '' %> class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                <label for="fonnte_enabled" class="text-xs font-bold text-slate-700 cursor-pointer">
+                  Aktifkan Gateway Fonnte
+                </label>
+              </div>
+
+              <div class="flex items-center gap-2.5">
+                <input type="checkbox" id="fonnte_auto_send" name="fonnte_auto_send" value="1" <%= settings.fonnte_auto_send === '1' ? 'checked' : '' %> class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                <label for="fonnte_auto_send" class="text-xs font-semibold text-slate-700 cursor-pointer">
+                  Kirim Kwitansi Otomatis Saat Tagihan Lunas
+                </label>
+              </div>
+            </div>
+
+            <!-- Input Token Fonnte -->
+            <div class="pt-1">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">
+                Token API Fonnte *
+                <span class="text-slate-400 font-normal ml-1">(Dapatkan di menu Device Dashboard fonnte.com)</span>
+              </label>
+              <input type="text" id="fnToken" name="fonnte_token" value="<%= settings.fonnte_token || '' %>" placeholder="Contoh: a1b2c3d4e5f6g7h8..." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            </div>
+
+            <!-- Uji Kirim Pesan WA Fonnte -->
+            <div class="pt-3 border-t border-slate-100 space-y-2">
+              <label class="block text-xs font-semibold text-slate-700">Uji Coba Kirim Pesan WhatsApp Gateway</label>
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <input type="text" id="fnTestPhone" placeholder="Masukkan nomor HP/WA Anda (contoh: 081234567890)" class="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <button type="button" onclick="testFonnteConnection()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 whitespace-nowrap">
+                  <i class="fa-solid fa-paper-plane text-xs"></i>
+                  <span id="btnFnTestText">Kirim Pesan Tes</span>
+                </button>
+              </div>
+              <div id="fnTestResult" class="text-xs font-semibold hidden"></div>
+            </div>
+          </div>
+
+          <!-- 6. Keamanan & Ganti Password Admin -->
+          <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+            <div class="border-b border-slate-100 pb-3 flex items-center gap-2 text-sm font-bold text-slate-800">
+              <i class="fa-solid fa-lock text-brand-600"></i>
+              <span>Ganti Password Admin (Opsional)</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Password Saat Ini</label>
+                <input type="password" name="current_password" placeholder="Wajib diisi jika ganti password" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Password Baru</label>
+                <input type="password" name="new_password" placeholder="Password baru" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button type="submit" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-2">
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span>Simpan Seluruh Pengaturan</span>
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  async function testMikrotikConnection() {
+    const host = document.getElementById('mtHost').value;
+    const port = document.getElementById('mtPort').value;
+    const user = document.getElementById('mtUser').value;
+    const pass = document.getElementById('mtPass').value;
+    const btnText = document.getElementById('btnTestText');
+    const resultDiv = document.getElementById('testResult');
+
+    if (!host || !user) {
+      alert('Harap isi Host IP dan Username terlebih dahulu.');
+      return;
+    }
+
+    btnText.innerText = 'Menghubungkan...';
+    resultDiv.className = 'text-xs font-semibold text-slate-500';
+    resultDiv.innerText = 'Sedang menguji koneksi...';
+    resultDiv.classList.remove('hidden');
+
+    try {
+      const res = await fetch('/admin/pengaturan/test-mikrotik', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ host, port, user, pass })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        resultDiv.className = 'text-xs font-bold text-emerald-600 flex items-center gap-1.5';
+        resultDiv.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${data.message} (${data.details?.boardName || ''} v${data.details?.version || ''})`;
+      } else {
+        resultDiv.className = 'text-xs font-bold text-rose-600 flex items-center gap-1.5';
+        resultDiv.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${data.message}`;
+      }
+    } catch (err) {
+      resultDiv.className = 'text-xs font-bold text-rose-600';
+      resultDiv.innerText = 'Gagal melakukan tes: ' + err.message;
+    } finally {
+      btnText.innerText = 'Uji Koneksi MikroTik';
+    }
+  }
+
+  async function testFonnteConnection() {
+    const token = document.getElementById('fnToken').value;
+    const phone = document.getElementById('fnTestPhone').value;
+    const btnText = document.getElementById('btnFnTestText');
+    const resultDiv = document.getElementById('fnTestResult');
+
+    if (!token || !phone) {
+      alert('Harap isi Token Fonnte dan Nomor HP Tujuan tes terlebih dahulu.');
+      return;
+    }
+
+    btnText.innerText = 'Mengirim...';
+    resultDiv.className = 'text-xs font-semibold text-slate-500';
+    resultDiv.innerText = 'Sedang mengirim pesan WhatsApp via Fonnte...';
+    resultDiv.classList.remove('hidden');
+
+    try {
+      const res = await fetch('/admin/pengaturan/test-fonnte', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, phone })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        resultDiv.className = 'text-xs font-bold text-emerald-600 flex items-center gap-1.5';
+        resultDiv.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${data.message}`;
+      } else {
+        resultDiv.className = 'text-xs font-bold text-rose-600 flex items-center gap-1.5';
+        resultDiv.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${data.message}`;
+      }
+    } catch (err) {
+      resultDiv.className = 'text-xs font-bold text-rose-600';
+      resultDiv.innerText = 'Gagal melakukan tes: ' + err.message;
+    } finally {
+      btnText.innerText = 'Kirim Pesan Tes';
+    }
+  }
+</script>
+
+<%- include('../../partials/footer') %>

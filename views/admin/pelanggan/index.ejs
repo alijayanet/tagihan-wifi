@@ -1,0 +1,602 @@
+<%- include('../../partials/head') %>
+
+<div class="min-h-screen flex">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="flex-1 md:pl-64 flex flex-col min-w-0">
+    <%- include('../../partials/navbar') %>
+
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 bg-slate-50/60">
+      <div class="max-w-7xl mx-auto space-y-6">
+
+        <%- include('../../partials/alerts') %>
+
+        <!-- Header with Summary Counters & Action Button -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+          <div>
+            <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-users text-brand-600"></i>
+              <span>Data Pelanggan Internet</span>
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">Kelola seluruh data pelanggan, status akun, dan status tagihan bulanan</p>
+          </div>
+
+          <!-- Counter pills & Action Buttons -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold">
+              Total: <b class="text-slate-900"><%= summary.total %></b>
+            </span>
+            <span class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+              Aktif: <b><%= summary.aktif %></b>
+            </span>
+            <span class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 text-xs font-semibold border border-amber-200">
+              Isolir: <b><%= summary.isolir %></b>
+            </span>
+
+            <!-- Export CSV -->
+            <a href="/admin/pelanggan/export" class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition" title="Unduh File CSV Seluruh Pelanggan">
+              <i class="fa-solid fa-file-export text-slate-500"></i>
+              <span>Export CSV</span>
+            </a>
+
+            <!-- Import CSV -->
+            <button onclick="openImportModal()" class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition" title="Unggah File CSV Pelanggan">
+              <i class="fa-solid fa-file-import text-slate-500"></i>
+              <span>Import CSV</span>
+            </button>
+
+            <!-- Tambah Pelanggan -->
+            <button onclick="openAddCustomerModal()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-sm transition">
+              <i class="fa-solid fa-user-plus"></i>
+              <span>Tambah Pelanggan</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+          <form action="/admin/pelanggan" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            
+            <!-- Pencarian -->
+            <div class="lg:col-span-1">
+              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Cari Pelanggan</label>
+              <div class="relative">
+                <input type="text" name="search" value="<%= search %>" placeholder="Nama, kode, HP..."
+                       class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
+              </div>
+            </div>
+
+            <!-- Periode Tagihan -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Periode Tagihan</label>
+              <div class="grid grid-cols-2 gap-1.5">
+                <select name="month" class="px-2 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  <% for(let m=1; m<=12; m++) { %>
+                    <option value="<%= m %>" <%= currentMonth === m ? 'selected' : '' %>><%= m %> - <%= ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][m-1] %></option>
+                  <% } %>
+                </select>
+                <select name="year" class="px-2 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  <% for(let y=currentYear-1; y<=currentYear+1; y++) { %>
+                    <option value="<%= y %>" <%= currentYear === y ? 'selected' : '' %>><%= y %></option>
+                  <% } %>
+                </select>
+              </div>
+            </div>
+
+            <!-- Filter Status Tagihan (LUNAS / BELUM) -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Status Tagihan</label>
+              <select name="bill" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500">
+                <option value="">Semua (Lunas & Belum)</option>
+                <option value="lunas" <%= filterBill === 'lunas' ? 'selected' : '' %>>🟢 LUNAS Saja</option>
+                <option value="belum" <%= filterBill === 'belum' ? 'selected' : '' %>>🔴 BELUM LUNAS Saja</option>
+              </select>
+            </div>
+
+            <!-- Filter Kolektor -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Kolektor PJ</label>
+              <select name="collector" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500">
+                <option value="">Semua Kolektor</option>
+                <% collectors.forEach(c => { %>
+                  <option value="<%= c.id %>" <%= filterCollector == c.id ? 'selected' : '' %>><%= c.name %></option>
+                <% }) %>
+              </select>
+            </div>
+
+            <!-- Tombol Submit Filter -->
+            <div class="flex items-end gap-2">
+              <button type="submit" class="flex-1 py-2 px-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-filter text-xs"></i> Terapkan
+              </button>
+              <a href="/admin/pelanggan" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold transition" title="Reset Filter">
+                <i class="fa-solid fa-arrows-rotate"></i>
+              </a>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- Tabel Pelanggan -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/70">
+                  <th class="py-3.5 px-4">Pelanggan</th>
+                  <th class="py-3.5 px-4">Kontak & Alamat</th>
+                  <th class="py-3.5 px-4">Paket & Harga</th>
+                  <th class="py-3.5 px-4">Kolektor</th>
+                  <th class="py-3.5 px-4 text-center">Status Tagihan (<%= monthName %>)</th>
+                  <th class="py-3.5 px-4 text-center">Status Akun</th>
+                  <th class="py-3.5 px-4 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-xs">
+                <% if (customers.length === 0) { %>
+                  <tr>
+                    <td colspan="7" class="py-10 text-center text-slate-400">
+                      <i class="fa-solid fa-user-slash text-3xl mb-2 block"></i>
+                      Tidak ada data pelanggan yang cocok dengan filter.
+                    </td>
+                  </tr>
+                <% } %>
+
+                <% customers.forEach(c => { %>
+                  <tr class="hover:bg-slate-50/80 transition-colors">
+                    
+                    <!-- Nama & Kode -->
+                    <td class="py-3.5 px-4">
+                      <a href="/admin/pelanggan/<%= c.id %>" class="font-bold text-slate-900 hover:text-brand-600 transition block">
+                        <%= c.name %>
+                      </a>
+                      <span class="text-[11px] font-mono font-medium text-slate-400">
+                        <%= c.customer_code %>
+                      </span>
+                    </td>
+
+                    <!-- Kontak & Alamat -->
+                    <td class="py-3.5 px-4 max-w-xs">
+                      <div class="flex items-center gap-1.5 font-medium text-slate-700">
+                        <i class="fa-solid fa-phone text-[10px] text-slate-400"></i>
+                        <span><%= c.phone %></span>
+                      </div>
+                      <div class="text-[11px] text-slate-400 truncate mt-0.5" title="<%= c.address %>">
+                        <%= c.address || '-' %>
+                      </div>
+                    </td>
+
+                    <!-- Paket -->
+                    <td class="py-3.5 px-4">
+                      <div class="font-bold text-slate-800"><%= c.package_name %></div>
+                      <div class="text-[11px] text-slate-500 font-medium">
+                        <%= formatRupiah(c.package_price) %> &bull; <span class="text-brand-600"><%= c.package_speed %></span>
+                      </div>
+                    </td>
+
+                    <!-- Kolektor -->
+                    <td class="py-3.5 px-4">
+                      <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                        <i class="fa-solid fa-motorcycle text-slate-400"></i>
+                        <%= c.collector_name || 'Tanpa Kolektor' %>
+                      </span>
+                    </td>
+
+                    <!-- Status Tagihan (LUNAS vs BELUM) -->
+                    <td class="py-3.5 px-4 text-center">
+                      <% if (c.current_bill_status === 'lunas') { %>
+                        <div class="inline-flex flex-col items-center">
+                          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <i class="fa-solid fa-circle-check"></i> LUNAS
+                          </span>
+                          <span class="text-[10px] text-slate-400 mt-0.5 font-mono"><%= c.current_payment_method ? c.current_payment_method.toUpperCase() : 'TUNAI' %></span>
+                        </div>
+                      <% } else { %>
+                        <div class="inline-flex flex-col items-center">
+                          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            <i class="fa-solid fa-clock"></i> BELUM LUNAS
+                          </span>
+                          <span class="text-[10px] text-slate-400 mt-0.5">Tempo tgl <%= c.due_date || 10 %></span>
+                        </div>
+                      <% } %>
+                    </td>
+
+                    <!-- Status Akun (Aktif / Isolir / Nonaktif) -->
+                    <td class="py-3.5 px-4 text-center">
+                      <% if (c.status === 'aktif') { %>
+                        <span class="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800">Aktif</span>
+                      <% } else if (c.status === 'isolir') { %>
+                        <span class="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800">Isolir</span>
+                      <% } else { %>
+                        <span class="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700">Non-Aktif</span>
+                      <% } %>
+                    </td>
+
+                    <!-- Aksi Lengkap -->
+                    <td class="py-3.5 px-4 text-right">
+                      <div class="inline-flex items-center gap-1.5">
+                        
+                        <!-- Tombol Bayar Cepat jika belum lunas -->
+                        <% if (c.current_bill_status !== 'lunas') { %>
+                          <% if (c.current_bill_id) { %>
+                            <button type="button" onclick="openPayModal('<%= c.current_bill_id %>', '<%= c.name %>', '<%= c.package_price %>')"
+                                    class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-sm transition" title="Bayar Sekarang">
+                              <i class="fa-solid fa-check mr-1"></i> Bayar
+                            </button>
+                          <% } %>
+
+                          <!-- Tombol Kirim Tagihan via WhatsApp -->
+                          <a href="<%= c.waReminderUrl %>" target="_blank" title="Kirim Tagihan ke WhatsApp Pelanggan"
+                             class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition">
+                            <i class="fa-brands fa-whatsapp text-sm"></i>
+                          </a>
+                        <% } else { %>
+                          <!-- Tombol Cetak Struk jika sudah lunas -->
+                          <a href="/admin/tagihan/<%= c.current_bill_id %>/struk" target="_blank" title="Cetak Struk Pembayaran"
+                             class="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                            <i class="fa-solid fa-print text-sm"></i>
+                          </a>
+                        <% } %>
+
+                        <!-- Detail Button -->
+                        <a href="/admin/pelanggan/<%= c.id %>" title="Detail & Riwayat Tagihan" 
+                           class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition">
+                          <i class="fa-solid fa-eye text-sm"></i>
+                        </a>
+
+                        <!-- Edit Button -->
+                        <button type="button" onclick="openEditCustomerModal('<%= c.id %>', '<%= c.name %>', '<%= c.phone %>', '<%= c.address %>', '<%= c.package_id %>', '<%= c.collector_id %>', '<%= c.due_date %>', '<%= c.ip_address %>', '<%= c.status %>', '<%= c.notes %>')"
+                                title="Edit Pelanggan" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition">
+                          <i class="fa-solid fa-pen-to-square text-sm"></i>
+                        </button>
+
+                        <!-- Hapus -->
+                        <form action="/admin/pelanggan/<%= c.id %>/delete" method="POST" onsubmit="return confirm('Hapus pelanggan <%= c.name %> beserta seluruh riwayat tagihannya?')" class="inline">
+                          <button type="submit" class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition" title="Hapus Pelanggan">
+                            <i class="fa-solid fa-trash-can text-sm"></i>
+                          </button>
+                        </form>
+
+                      </div>
+                    </td>
+
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal Tambah Pelanggan -->
+<div id="addCustomerModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <h4 class="text-sm font-bold text-slate-800">Tambah Pelanggan Baru</h4>
+      <button onclick="closeAddCustomerModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <form action="/admin/pelanggan" method="POST" class="space-y-3.5">
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap Pelanggan *</label>
+        <input type="text" name="name" required placeholder="Contoh: Bpk. Budi Santoso" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">No. WhatsApp / HP *</label>
+          <input type="text" name="phone" required placeholder="Contoh: 081234567890" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Tgl Jatuh Tempo</label>
+          <input type="number" name="due_date" value="10" min="1" max="28" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Paket Internet *</label>
+          <select name="package_id" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <option value="">-- Pilih Paket --</option>
+            <% packages.forEach(pkg => { %>
+              <option value="<%= pkg.id %>"><%= pkg.name %> (<%= pkg.speed %> - <%= formatRupiah(pkg.price) %>)</option>
+            <% }) %>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Kolektor Penanggung Jawab</label>
+          <select name="collector_id" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <option value="">-- Tanpa Kolektor --</option>
+            <% collectors.forEach(c => { %>
+              <option value="<%= c.id %>"><%= c.name %> (<%= c.area || 'Wilayah' %>)</option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Lengkap</label>
+        <textarea name="address" rows="2" placeholder="Contoh: Jl. Merdeka No. 10 RT 02/03" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Status Akun</label>
+          <select name="status" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <option value="aktif">Aktif</option>
+            <option value="isolir">Isolir</option>
+            <option value="nonaktif">Non-Aktif</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">IP Address / Info ONT</label>
+          <input type="text" name="ip_address" placeholder="192.168.1.xxx" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan</label>
+        <input type="text" name="notes" placeholder="Patokan rumah, info kabel, dll." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+      </div>
+
+      <div class="mt-5 flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeAddCustomerModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200">Batal</button>
+        <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-sm">Simpan Pelanggan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Edit Pelanggan -->
+<div id="editCustomerModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <h4 class="text-sm font-bold text-slate-800">Edit Data Pelanggan</h4>
+      <button onclick="closeEditCustomerModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <form id="editCustomerForm" method="POST" class="space-y-3.5">
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap Pelanggan *</label>
+        <input type="text" id="editCustName" name="name" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">No. WhatsApp / HP *</label>
+          <input type="text" id="editCustPhone" name="phone" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Tgl Jatuh Tempo</label>
+          <input type="number" id="editCustDueDate" name="due_date" min="1" max="28" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Paket Internet *</label>
+          <select id="editCustPackage" name="package_id" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <% packages.forEach(pkg => { %>
+              <option value="<%= pkg.id %>"><%= pkg.name %> (<%= pkg.speed %> - <%= formatRupiah(pkg.price) %>)</option>
+            <% }) %>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Kolektor Penanggung Jawab</label>
+          <select id="editCustCollector" name="collector_id" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <option value="">-- Tanpa Kolektor --</option>
+            <% collectors.forEach(c => { %>
+              <option value="<%= c.id %>"><%= c.name %> (<%= c.area || 'Wilayah' %>)</option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Lengkap</label>
+        <textarea id="editCustAddress" name="address" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Status Akun</label>
+          <select id="editCustStatus" name="status" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <option value="aktif">Aktif</option>
+            <option value="isolir">Isolir</option>
+            <option value="nonaktif">Non-Aktif</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">IP Address / Info ONT</label>
+          <input type="text" id="editCustIp" name="ip_address" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan</label>
+        <input type="text" id="editCustNotes" name="notes" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+      </div>
+
+      <div class="mt-5 flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeEditCustomerModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200">Batal</button>
+        <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-sm">Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Bayar Tagihan -->
+<div id="payModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <h4 class="text-sm font-bold text-slate-800">Catat Pembayaran</h4>
+      <button onclick="closePayModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <form id="payForm" method="POST">
+      <div class="space-y-3">
+        <div>
+          <p class="text-xs text-slate-500">Nama Pelanggan:</p>
+          <p id="payCustomerName" class="text-sm font-bold text-slate-800">-</p>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500">Nominal Tagihan:</p>
+          <p id="payAmount" class="text-base font-extrabold text-emerald-600">-</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Metode Bayar</label>
+          <select name="payment_method" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <option value="tunai">Tunai / Cash</option>
+            <option value="transfer">Transfer Bank</option>
+            <option value="qris">QRIS / E-Wallet</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Kolektor Penerima</label>
+          <select name="collected_by" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <option value="">Admin Langsung (Pusat)</option>
+            <% collectors.forEach(c => { %>
+              <option value="<%= c.id %>"><%= c.name %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-6 flex items-center justify-end gap-2">
+        <button type="button" onclick="closePayModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200">
+          Batal
+        </button>
+        <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm">
+          Set LUNAS
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Import Pelanggan (CSV) -->
+<div id="importModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+        <i class="fa-solid fa-file-import text-brand-600"></i>
+        <span>Import Data Pelanggan (CSV)</span>
+      </h4>
+      <button onclick="closeImportModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <form action="/admin/pelanggan/import" method="POST" enctype="multipart/form-data" class="space-y-4">
+      
+      <!-- Template Download Banner -->
+      <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-start gap-2.5">
+        <i class="fa-solid fa-circle-info text-blue-600 text-sm mt-0.5 flex-shrink-0"></i>
+        <div>
+          <p class="font-semibold mb-1">Gunakan Format CSV Standar</p>
+          <p class="text-[11px] text-blue-700 leading-relaxed">
+            Agar data masuk dengan tepat, unduh format contoh file CSV di bawah ini sebelum mengunggah.
+          </p>
+          <a href="/admin/pelanggan/template" class="inline-flex items-center gap-1.5 mt-2 font-bold text-brand-700 hover:text-brand-900 bg-white px-2.5 py-1 rounded-lg border border-blue-300 text-[11px] shadow-sm transition">
+            <i class="fa-solid fa-download"></i> Unduh Template CSV Contoh
+          </a>
+        </div>
+      </div>
+
+      <!-- File Upload Input -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Pilih File CSV (.csv) *</label>
+        <input type="file" name="file" accept=".csv,text/csv" required class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-300 rounded-xl p-1.5 focus:outline-none">
+      </div>
+
+      <div class="text-[11px] text-slate-500 space-y-1 bg-slate-50 p-3 rounded-xl border border-slate-100">
+        <p class="font-semibold text-slate-700"><i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i> Petunjuk:</p>
+        <p>&bull; Kolom wajib: <b>Nama Lengkap</b> dan <b>Nomor HP</b>.</p>
+        <p>&bull; Jika nama paket cocok, sistem akan menghubungkan paket tersebut otomatis.</p>
+        <p>&bull; Pelanggan berstatus <b>aktif</b> otomatis dibuatkan tagihan bulan berjalan.</p>
+      </div>
+
+      <div class="mt-5 flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button type="button" onclick="closeImportModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200">Batal</button>
+        <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-sm flex items-center gap-1.5">
+          <i class="fa-solid fa-upload"></i>
+          <span>Mulai Impor</span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  function openImportModal() {
+    const modal = document.getElementById('importModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+  function closeImportModal() {
+    const modal = document.getElementById('importModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+
+  function openAddCustomerModal() {
+    const modal = document.getElementById('addCustomerModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+  function closeAddCustomerModal() {
+    const modal = document.getElementById('addCustomerModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+
+  function openEditCustomerModal(id, name, phone, address, pkgId, colId, dueDate, ip, status, notes) {
+    const modal = document.getElementById('editCustomerModal');
+    document.getElementById('editCustomerForm').action = `/admin/pelanggan/${id}/update`;
+    document.getElementById('editCustName').value = name;
+    document.getElementById('editCustPhone').value = phone;
+    document.getElementById('editCustAddress').value = address;
+    document.getElementById('editCustPackage').value = pkgId;
+    document.getElementById('editCustCollector').value = colId || '';
+    document.getElementById('editCustDueDate').value = dueDate || 10;
+    document.getElementById('editCustIp').value = ip;
+    document.getElementById('editCustStatus').value = status;
+    document.getElementById('editCustNotes').value = notes;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+  function closeEditCustomerModal() {
+    const modal = document.getElementById('editCustomerModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+
+  function openPayModal(billId, name, amount) {
+    const modal = document.getElementById('payModal');
+    document.getElementById('payForm').action = `/admin/tagihan/${billId}/bayar`;
+    document.getElementById('payCustomerName').innerText = name;
+    document.getElementById('payAmount').innerText = 'Rp ' + Number(amount).toLocaleString('id-ID');
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+  function closePayModal() {
+    const modal = document.getElementById('payModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+
+  // Handle hash modal trigger
+  if (window.location.hash === '#modalTambah') {
+    openAddCustomerModal();
+  }
+</script>
+
+<%- include('../../partials/footer') %>

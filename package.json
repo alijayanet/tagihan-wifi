@@ -1,0 +1,36 @@
+{
+  "name": "tagihan-wifi",
+  "version": "1.0.0",
+  "description": "Aplikasi Manajemen Tagihan WiFi Sederhana untuk Armbian / Linux dengan SQLite WAL",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node database/seed.js",
+    "autobill": "node src/cron/autoBill.js"
+  },
+  "keywords": [
+    "wifi",
+    "billing",
+    "armbian",
+    "sqlite-wal",
+    "kolektor"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alijayanet/tagihan-wifi.git"
+  },
+  "author": "ALIJAYA-NET (HP: 081947215703)",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "connect-flash": "^0.1.1",
+    "dotenv": "^17.3.1",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "method-override": "^3.0.0",
+    "multer": "^2.4.0",
+    "node-routeros": "^1.6.8",
+    "sqlite3": "^6.0.1"
+  }
+}
